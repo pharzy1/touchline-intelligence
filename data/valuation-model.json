@@ -1,0 +1,84 @@
+{
+  "version": "valuation-ridge-2025-v1",
+  "trained_at": "2026-08-31T22:19:14.838568+00:00",
+  "competition": "GB1",
+  "season": 2025,
+  "currency": "EUR",
+  "target": "market_value_in_eur",
+  "algorithm": "ridge_regression_on_log_target",
+  "features": [
+    "age",
+    "appearances",
+    "goals",
+    "assists",
+    "minutes",
+    "goals_per_90",
+    "assists_per_90",
+    "international_caps",
+    "is_forward",
+    "is_midfielder",
+    "is_defender",
+    "is_goalkeeper"
+  ],
+  "mean": [
+    26.05740181,
+    25.54380665,
+    2.28096677,
+    1.64048338,
+    1708.24471299,
+    0.11537261,
+    0.08852514,
+    24.918429,
+    0.26586103,
+    0.27794562,
+    0.37462236,
+    0.081571
+  ],
+  "scale": [
+    3.94597556,
+    8.87886162,
+    3.49227464,
+    1.7778577,
+    887.60148508,
+    0.15563356,
+    0.09299808,
+    25.76472668,
+    0.44179061,
+    0.44798644,
+    0.48402525,
+    0.27371001
+  ],
+  "intercept": 16.749341455829143,
+  "coefficients": [
+    -0.7567766542,
+    -0.1398750925,
+    0.036685199,
+    0.0556792874,
+    0.5037267416,
+    0.1730249823,
+    -0.0071085598,
+    0.1890189503,
+    0.019849909,
+    0.018477892,
+    -0.0064745976,
+    -0.0508329225
+  ],
+  "uncertainty_ratio": 0.4984076256170191,
+  "metrics": {
+    "records": 414,
+    "train_records": 331,
+    "test_records": 83,
+    "mae_eur": 9905783,
+    "r2": 0.6135,
+    "median_absolute_percentage_error": 0.3279
+  },
+  "split": {
+    "method": "seeded_random_80_20",
+    "seed": 42
+  },
+  "source": {
+    "name": "dcaribou/transfermarkt-datasets",
+    "license": "CC0-1.0",
+    "url": "https://github.com/dcaribou/transfermarkt-datasets"
+  }
+}

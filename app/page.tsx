@@ -1,4 +1,5 @@
 import { ValuationWorkbench } from "./valuation-workbench";
+import model from "../data/valuation-model.json";
 
 const Arrow = () => <span aria-hidden="true">↗</span>;
 
@@ -27,10 +28,10 @@ export default function Home() {
         </div>
         <div className="hero-rule" />
         <div className="ticker" aria-label="Platform statistics">
-          <div><strong>518</strong><span>players indexed</span></div>
-          <div><strong>12</strong><span>model features</span></div>
-          <div><strong>£8.4m</strong><span>median valuation</span></div>
-          <div><strong>0.86</strong><span>validation R²</span></div>
+          <div><strong>{model.metrics.records}</strong><span>players trained</span></div>
+          <div><strong>{model.features.length}</strong><span>model features</span></div>
+          <div><strong>€{Math.round(model.metrics.mae_eur / 1_000_000)}m</strong><span>validation MAE</span></div>
+          <div><strong>{model.metrics.r2.toFixed(2)}</strong><span>validation R²</span></div>
         </div>
       </section>
 
@@ -47,14 +48,14 @@ export default function Home() {
 
       <section className="model-section shell" id="model-card">
         <div className="model-title">
-          <span className="section-index">MODEL CARD / V0.1</span>
+          <span className="section-index">MODEL CARD / {model.version}</span>
           <h2>Built to be<br /><em>questioned.</em></h2>
         </div>
         <div className="model-copy">
           <p className="lead">A prediction without context is just a number. Touchline shows what drives every estimate.</p>
           <div className="model-grid">
-            <div><span>APPROACH</span><strong>Gradient-boosted regression</strong><p>Non-linear model tuned against a held-out validation set.</p></div>
-            <div><span>PRIMARY METRIC</span><strong>Mean absolute error</strong><p>Reported in pounds for an intuitive view of model error.</p></div>
+            <div><span>APPROACH</span><strong>Regularized log regression</strong><p>Reproducible baseline evaluated against a seeded 20% holdout.</p></div>
+            <div><span>PRIMARY METRIC</span><strong>€{Math.round(model.metrics.mae_eur / 1_000_000)}m mean absolute error</strong><p>Reported in euros alongside R² and median percentage error.</p></div>
             <div><span>LIMITATION</span><strong>Market data is noisy</strong><p>Estimates are directional and should not replace professional scouting.</p></div>
             <div><span>VERSIONING</span><strong>Reproducible runs</strong><p>Each prediction records its feature set and model version.</p></div>
           </div>
