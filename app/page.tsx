@@ -13,7 +13,7 @@ export default function Home() {
         </a>
         <div className="nav-links">
           <a className="active" href="#valuation">Valuation</a>
-          <a href="#roadmap">Scouting</a>
+          <a href="/scouting">Scouting</a>
           <a href="#roadmap">Matches</a>
         </div>
         <a className="github-link" href="#model-card">Model card <Arrow /></a>
@@ -70,7 +70,7 @@ export default function Home() {
           </div>
           <div className="roadmap-grid">
             <article className="roadmap-card live"><span className="status">LIVE MVP</span><span className="number">01</span><h3>Value a player</h3><p>Estimate market value from performance, age, position, and experience.</p><a href="#valuation">Try the model <Arrow /></a></article>
-            <article className="roadmap-card"><span className="status">NEXT</span><span className="number">02</span><h3>Find a profile</h3><p>Surface stylistically similar players for recruitment and squad planning.</p><span className="muted-link">Clustering pipeline</span></article>
+            <article className="roadmap-card live-secondary"><span className="status">LIVE</span><span className="number">02</span><h3>Find a profile</h3><p>Surface statistically similar players within recruitment constraints.</p><a href="/scouting">Open scouting lab <Arrow /></a></article>
             <article className="roadmap-card"><span className="status">PLANNED</span><span className="number">03</span><h3>Read the match</h3><p>Compare team form and estimate win, draw, and loss probabilities.</p><span className="muted-link">Outcome classifier</span></article>
           </div>
         </div>

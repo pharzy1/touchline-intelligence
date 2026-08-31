@@ -11,6 +11,12 @@ output, international experience, and position. The exported model includes
 its exact feature order, normalization statistics, coefficients, split seed,
 evaluation metrics, source, and training timestamp.
 
+`scouting-index.json` is generated in the same run. It standardizes age,
+availability, per-90 goal and assist output, minutes per appearance, and
+international experience. The API compares players only within the same broad
+position using Euclidean distance and returns the nearest profiles with an
+explanation of their strongest shared signals.
+
 Market values are estimates rather than transaction prices. The model is a
 portfolio demonstration and must not be used as financial or recruitment
 advice.

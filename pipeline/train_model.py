@@ -29,6 +29,7 @@ FEATURES = [
     "goals_per_90", "assists_per_90", "international_caps",
     "is_forward", "is_midfielder", "is_defender", "is_goalkeeper",
 ]
+SCOUT_FEATURES = ["age", "appearances", "goals_per_90", "assists_per_90", "minutes_per_appearance", "international_caps"]
 
 
 def read_gzip_csv(name: str):
@@ -92,6 +93,7 @@ def main() -> None:
             "is_midfielder": 1 if position == "Midfield" else 0,
             "is_defender": 1 if position == "Defender" else 0,
             "is_goalkeeper": 1 if position == "Goalkeeper" else 0,
+            "minutes_per_appearance": minutes / stats["appearances"],
         }
         records.append({
             "player_id": int(player["player_id"]),
@@ -160,8 +162,32 @@ def main() -> None:
     }
     OUT.mkdir(exist_ok=True)
     (OUT / "valuation-model.json").write_text(json.dumps(artifact, indent=2) + "\n")
-    sample = sorted(records, key=lambda row: row["market_value_eur"], reverse=True)[:30]
-    (OUT / "players-sample.json").write_text(json.dumps(sample, indent=2, ensure_ascii=False) + "\n")
+    scouting_matrix = np.array([[row[name] for name in SCOUT_FEATURES] for row in records], dtype=float)
+    scouting_mean = scouting_matrix.mean(axis=0)
+    scouting_scale = scouting_matrix.std(axis=0)
+    scouting_scale[scouting_scale == 0] = 1
+    scouting = {
+        "version": "scouting-neighbors-2025-v1",
+        "created_at": artifact["trained_at"],
+        "season": latest_season,
+        "features": SCOUT_FEATURES,
+        "method": "same-position standardized euclidean nearest neighbors",
+        "mean": scouting_mean.round(8).tolist(),
+        "scale": scouting_scale.round(8).tolist(),
+        "source": artifact["source"],
+        "players": [
+            {
+                "player_id": row["player_id"], "name": row["name"], "club": row["club"], "position": row["position"],
+                "age": row["age"], "appearances": row["appearances"], "goals": row["goals"], "assists": row["assists"],
+                "minutes": row["minutes"], "goals_per_90": round(row["goals_per_90"], 4), "assists_per_90": round(row["assists_per_90"], 4),
+                "minutes_per_appearance": round(row["minutes_per_appearance"], 2), "international_caps": row["international_caps"],
+                "market_value_eur": row["market_value_eur"],
+                "vector": ((np.array([row[name] for name in SCOUT_FEATURES]) - scouting_mean) / scouting_scale).round(6).tolist(),
+            }
+            for row in records
+        ],
+    }
+    (OUT / "scouting-index.json").write_text(json.dumps(scouting, indent=2, ensure_ascii=False) + "\n")
     print(json.dumps(artifact["metrics"], indent=2))
 
 

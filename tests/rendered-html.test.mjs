@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-async function render() {
+async function render(path = "/") {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
   return worker.fetch(
-    new Request("http://localhost/", { headers: { accept: "text/html" } }),
+    new Request(`http://localhost${path}`, { headers: { accept: "text/html" } }),
     { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } },
     { waitUntil() {}, passThroughOnException() {} },
   );
@@ -65,4 +65,30 @@ test("rejects out-of-domain prediction inputs", async () => {
     body: JSON.stringify({ age: 8, position: "Striker", appearances: 99, goals: 14, assists: 8, minutes: 2360 }),
   }));
   assert.equal(response.status, 400);
+});
+
+test("renders the scouting module", async () => {
+  const response = await render("/scouting");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /Recruit the profile/);
+  assert.match(html, /Player similarity search/);
+  assert.match(html, /RECRUITMENT CONSTRAINTS/);
+  assert.match(html, /Similarity you can/);
+});
+
+test("searches players and returns explained nearest profiles", async () => {
+  const searchResponse = await requestWorker(new Request("http://localhost/api/scouting?q=Haaland"));
+  assert.equal(searchResponse.status, 200);
+  const search = await searchResponse.json();
+  assert.equal(search.players[0].name, "Erling Haaland");
+  const response = await requestWorker(new Request(`http://localhost/api/scouting?player_id=${search.players[0].player_id}&club=different&max_age=30&max_value_eur=75000000`));
+  assert.equal(response.status, 200);
+  const result = await response.json();
+  assert.equal(result.version, "scouting-neighbors-2025-v1");
+  assert.equal(result.selected.name, "Erling Haaland");
+  assert.ok(result.matches.length > 0);
+  assert.ok(result.matches.length <= 5);
+  assert.ok(result.matches.every((player) => player.position === "Attack" && player.age <= 30 && player.market_value_eur <= 75_000_000 && player.club !== "Manchester City"));
+  assert.ok(result.matches.every((player) => player.shared_signals.length === 3));
 });
