@@ -1,0 +1,320 @@
+{
+  "version": "match-softmax-2025-v1",
+  "trained_at": "2026-08-31T22:42:50.835011+00:00",
+  "competition": "GB1",
+  "latest_season": 2025,
+  "calibration_season": 2024,
+  "algorithm": "regularized_multinomial_logistic_regression",
+  "classes": [
+    "home_win",
+    "draw",
+    "away_win"
+  ],
+  "features": [
+    "elo_difference",
+    "home_points_5",
+    "away_points_5",
+    "home_goal_difference_5",
+    "away_goal_difference_5",
+    "home_goals_for_5",
+    "away_goals_for_5",
+    "home_goals_against_5",
+    "away_goals_against_5"
+  ],
+  "mean": [
+    0.42345467,
+    1.36790068,
+    1.40826185,
+    -0.02054176,
+    0.03995485,
+    1.38139955,
+    1.41146727,
+    1.40194131,
+    1.37151242
+  ],
+  "scale": [
+    149.43319814,
+    0.69883416,
+    0.69508069,
+    1.0332629,
+    1.0283134,
+    0.67594384,
+    0.6777165,
+    0.61532412,
+    0.61117599
+  ],
+  "weights": [
+    [
+      0.331169299,
+      -0.2449756076,
+      -0.0861936913
+    ],
+    [
+      0.4682399738,
+      0.0386730885,
+      -0.5069130623
+    ],
+    [
+      -0.0560066747,
+      0.0064327806,
+      0.0495738941
+    ],
+    [
+      0.0754477807,
+      0.0283597908,
+      -0.1038075715
+    ],
+    [
+      0.0589003263,
+      -0.0291954511,
+      -0.0297048752
+    ],
+    [
+      -0.0622628207,
+      0.0025588191,
+      0.0597040016
+    ],
+    [
+      0.0555665783,
+      -0.0147178769,
+      -0.0408487015
+    ],
+    [
+      -0.045197435,
+      -0.0091770046,
+      0.0543744396
+    ],
+    [
+      -0.0378656302,
+      0.0328576722,
+      0.0050079579
+    ],
+    [
+      0.0546399825,
+      -0.014481386,
+      -0.0401585965
+    ]
+  ],
+  "temperature": 1.12,
+  "split": {
+    "method": "season_ordered",
+    "train_through": 2023,
+    "calibration_season": 2024,
+    "test_season": 2025
+  },
+  "metrics": {
+    "train_matches": 4430,
+    "calibration_matches": 375,
+    "test_matches": 380,
+    "accuracy": 0.4816,
+    "log_loss": 1.031,
+    "brier_score": 0.6201
+  },
+  "teams": [
+    {
+      "club_id": 989,
+      "name": "AFC Bournemouth",
+      "elo": 1641.67,
+      "form": "DWWDD",
+      "points_5": 1.8,
+      "goal_difference_5": 0.8,
+      "goals_for_5": 1.6,
+      "goals_against_5": 0.8
+    },
+    {
+      "club_id": 11,
+      "name": "Arsenal FC",
+      "elo": 1789.16,
+      "form": "WWWWW",
+      "points_5": 3.0,
+      "goal_difference_5": 1.4,
+      "goals_for_5": 1.6,
+      "goals_against_5": 0.2
+    },
+    {
+      "club_id": 405,
+      "name": "Aston Villa",
+      "elo": 1658.28,
+      "form": "LLDWW",
+      "points_5": 1.4,
+      "goal_difference_5": 0.2,
+      "goals_for_5": 1.8,
+      "goals_against_5": 1.6
+    },
+    {
+      "club_id": 1148,
+      "name": "Brentford FC",
+      "elo": 1596.14,
+      "form": "LWLDD",
+      "points_5": 1.0,
+      "goal_difference_5": -0.2,
+      "goals_for_5": 1.4,
+      "goals_against_5": 1.6
+    },
+    {
+      "club_id": 1237,
+      "name": "Brighton & Hove Albion",
+      "elo": 1602.93,
+      "form": "WLWLL",
+      "points_5": 1.2,
+      "goal_difference_5": 0.0,
+      "goals_for_5": 1.4,
+      "goals_against_5": 1.4
+    },
+    {
+      "club_id": 1132,
+      "name": "Burnley FC",
+      "elo": 1389.11,
+      "form": "LLDLD",
+      "points_5": 0.4,
+      "goal_difference_5": -0.8,
+      "goals_for_5": 0.8,
+      "goals_against_5": 1.6
+    },
+    {
+      "club_id": 631,
+      "name": "Chelsea FC",
+      "elo": 1597.64,
+      "form": "LLDWL",
+      "points_5": 0.8,
+      "goal_difference_5": -1.0,
+      "goals_for_5": 1.0,
+      "goals_against_5": 2.0
+    },
+    {
+      "club_id": 873,
+      "name": "Crystal Palace",
+      "elo": 1557.91,
+      "form": "LDLDL",
+      "points_5": 0.4,
+      "goal_difference_5": -1.4,
+      "goals_for_5": 1.0,
+      "goals_against_5": 2.4
+    },
+    {
+      "club_id": 29,
+      "name": "Everton FC",
+      "elo": 1563.4,
+      "form": "LDDLL",
+      "points_5": 0.4,
+      "goal_difference_5": -0.8,
+      "goals_for_5": 1.4,
+      "goals_against_5": 2.2
+    },
+    {
+      "club_id": 931,
+      "name": "Fulham FC",
+      "elo": 1574.89,
+      "form": "WLLDW",
+      "points_5": 1.4,
+      "goal_difference_5": -0.2,
+      "goals_for_5": 0.8,
+      "goals_against_5": 1.0
+    },
+    {
+      "club_id": 399,
+      "name": "Leeds United",
+      "elo": 1543.87,
+      "form": "DWDWL",
+      "points_5": 1.6,
+      "goal_difference_5": 0.0,
+      "goals_for_5": 1.4,
+      "goals_against_5": 1.4
+    },
+    {
+      "club_id": 31,
+      "name": "Liverpool FC",
+      "elo": 1671.22,
+      "form": "WLDLD",
+      "points_5": 1.0,
+      "goal_difference_5": -0.2,
+      "goals_for_5": 1.8,
+      "goals_against_5": 2.0
+    },
+    {
+      "club_id": 281,
+      "name": "Manchester City",
+      "elo": 1765.85,
+      "form": "DWWDL",
+      "points_5": 1.6,
+      "goal_difference_5": 1.0,
+      "goals_for_5": 2.2,
+      "goals_against_5": 1.2
+    },
+    {
+      "club_id": 985,
+      "name": "Manchester United",
+      "elo": 1675.69,
+      "form": "WWDWW",
+      "points_5": 2.6,
+      "goal_difference_5": 1.2,
+      "goals_for_5": 2.2,
+      "goals_against_5": 1.0
+    },
+    {
+      "club_id": 762,
+      "name": "Newcastle United",
+      "elo": 1584.76,
+      "form": "LWDWL",
+      "points_5": 1.4,
+      "goal_difference_5": 0.2,
+      "goals_for_5": 1.4,
+      "goals_against_5": 1.2
+    },
+    {
+      "club_id": 703,
+      "name": "Nottingham Forest",
+      "elo": 1570.76,
+      "form": "WWDLD",
+      "points_5": 1.6,
+      "goal_difference_5": 1.2,
+      "goals_for_5": 2.4,
+      "goals_against_5": 1.2
+    },
+    {
+      "club_id": 289,
+      "name": "Sunderland AFC",
+      "elo": 1532.29,
+      "form": "LDDWW",
+      "points_5": 1.6,
+      "goal_difference_5": -0.4,
+      "goals_for_5": 1.2,
+      "goals_against_5": 1.6
+    },
+    {
+      "club_id": 148,
+      "name": "Tottenham Hotspur",
+      "elo": 1505.96,
+      "form": "WWDLW",
+      "points_5": 2.0,
+      "goal_difference_5": 0.4,
+      "goals_for_5": 1.2,
+      "goals_against_5": 0.8
+    },
+    {
+      "club_id": 379,
+      "name": "West Ham United",
+      "elo": 1525.49,
+      "form": "WLLLW",
+      "points_5": 1.2,
+      "goal_difference_5": -0.4,
+      "goals_for_5": 1.2,
+      "goals_against_5": 1.6
+    },
+    {
+      "club_id": 543,
+      "name": "Wolverhampton Wanderers",
+      "elo": 1438.68,
+      "form": "LDLDD",
+      "points_5": 0.6,
+      "goal_difference_5": -0.8,
+      "goals_for_5": 0.6,
+      "goals_against_5": 1.4
+    }
+  ],
+  "source": {
+    "name": "dcaribou/transfermarkt-datasets",
+    "license": "CC0-1.0",
+    "url": "https://github.com/dcaribou/transfermarkt-datasets"
+  }
+}

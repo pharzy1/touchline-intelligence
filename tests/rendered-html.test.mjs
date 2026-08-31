@@ -92,3 +92,36 @@ test("searches players and returns explained nearest profiles", async () => {
   assert.ok(result.matches.every((player) => player.position === "Attack" && player.age <= 30 && player.market_value_eur <= 75_000_000 && player.club !== "Manchester City"));
   assert.ok(result.matches.every((player) => player.shared_signals.length === 3));
 });
+
+test("renders the match prediction module", async () => {
+  const response = await render("/matches");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /Read the matchup/);
+  assert.match(html, /Match outcome prediction/);
+  assert.match(html, /No peeking/);
+  assert.match(html, /three-way accuracy/i);
+});
+
+test("returns calibrated three-way match probabilities", async () => {
+  const teamsResponse = await requestWorker(new Request("http://localhost/api/matches"));
+  assert.equal(teamsResponse.status, 200);
+  const teams = await teamsResponse.json();
+  assert.equal(teams.teams.length, 20);
+  assert.equal(teams.split.method, "season_ordered");
+  const response = await requestWorker(new Request("http://localhost/api/matches?home_id=11&away_id=281"));
+  assert.equal(response.status, 200);
+  const result = await response.json();
+  assert.equal(result.version, "match-softmax-2025-v1");
+  assert.equal(result.home.name, "Arsenal FC");
+  assert.equal(result.away.name, "Manchester City");
+  const total = result.probabilities.home_win + result.probabilities.draw + result.probabilities.away_win;
+  assert.ok(Math.abs(total - 1) < 1e-9);
+  assert.equal(result.factors.length, 4);
+  assert.equal(result.calibrated, true);
+});
+
+test("rejects an impossible self-match", async () => {
+  const response = await requestWorker(new Request("http://localhost/api/matches?home_id=11&away_id=11"));
+  assert.equal(response.status, 400);
+});

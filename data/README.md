@@ -17,6 +17,12 @@ international experience. The API compares players only within the same broad
 position using Euclidean distance and returns the nearest profiles with an
 explanation of their strongest shared signals.
 
+`match-model.json` is produced by `pipeline/train_match_model.py`. Each example
+uses only information available before kickoff: rolling five-match form and
+goal rates plus a sequential Elo rating. Seasons are kept in chronological
+order, with separate training, probability-calibration, and final test seasons.
+The exported team state powers hypothetical match comparisons in the app.
+
 Market values are estimates rather than transaction prices. The model is a
 portfolio demonstration and must not be used as financial or recruitment
 advice.
