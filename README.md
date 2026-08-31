@@ -1,100 +1,114 @@
-# vinext-starter
+# Touchline Intelligence
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+An end-to-end Premier League analytics platform that turns historical football data into three recruiter-facing products: player valuation, similarity scouting, and calibrated match forecasting.
 
-## Prerequisites
+**[Live demo](https://touchline-intelligence.zesty-mole-4007.chatgpt.site/)** · [API reference](docs/API.md) · [Architecture](docs/ARCHITECTURE.md) · [Portfolio notes](docs/PORTFOLIO.md)
 
-- Node.js `>=22.13.0`
+![Touchline Intelligence dashboard](public/og.png)
 
-## Quick Start
+## Why this project exists
+
+Most portfolio ML projects stop at a notebook. Touchline carries the work through the full product lifecycle: reproducible Python training pipelines, versioned model artifacts, typed edge APIs, an interactive React interface, automated verification, and a live deployment.
+
+### Product surfaces
+
+- **Valuation workbench** estimates a player's market value and uncertainty range from 12 football and profile features.
+- **Scouting lab** retrieves same-position alternatives using standardized Euclidean nearest neighbours and explains the strongest shared signals.
+- **Match lab** returns calibrated home/draw/away probabilities from sequential Elo and rolling five-match form.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    A["Transfermarkt dataset · CC0"] --> B["Python feature pipelines"]
+    B --> C["Versioned JSON artifacts"]
+    C --> D["Next.js edge API routes"]
+    D --> E["React decision workbenches"]
+    D -. optional analytics .-> F["Cloudflare D1"]
+    E --> G["Cloudflare deployment"]
+```
+
+The deployed app performs inference from compact, immutable JSON artifacts. It does not scrape websites or retrain models at request time. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the data flow and design trade-offs.
+
+## Model results
+
+| Capability | Method | Evaluation | Result |
+| --- | --- | --- | --- |
+| Player valuation | Ridge regression on log market value | Seeded 80/20 holdout, 414 players | R² **0.6135**, MAE **€9.9m** |
+| Match forecasting | Regularized multinomial logistic regression + temperature scaling | Chronological season split, 380-match test set | Accuracy **48.16%** |
+| Similarity scouting | Same-position standardized nearest neighbours | 414-player index | Explainable top-5 retrieval |
+
+These are transparent baselines, not claims of production-grade sporting certainty. Market values are noisy estimates, and match accuracy should be interpreted alongside calibration metrics in the artifact.
+
+## Stack
+
+- TypeScript, React 19, Next.js 16, Tailwind CSS
+- Python, NumPy, reproducible feature-engineering pipelines
+- Cloudflare Workers and optional D1 persistence
+- Node test runner and GitHub Actions CI
+
+## Run locally
+
+Requirements: Node.js 22.13+, pnpm 11, and Python 3.11+ only if retraining.
 
 ```bash
-npm install
-npm run dev
-npm run build
+pnpm install
+pnpm dev
 ```
 
-This starter does not use `wrangler.jsonc`.
+Open `http://localhost:3000`. The committed model artifacts make local inference work without Python or source data.
 
-## Included Shape
+### Verify the project
 
-- edit site code under `app/`
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
-
-## Workspace Auth Headers
-
-Signed-in visitors receive both `oai-authenticated-user-id` and `oai-authenticated-user-email`. Private Sites require every visitor to sign in; public Sites may also have anonymous visitors, for whom neither header is present.
-
-The user ID is stable for the same user on the same Site and different across Sites. Email and name are intended for display or contact purposes.
-
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const userId = requestHeaders.get("oai-authenticated-user-id");
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
+```bash
+pnpm check
 ```
 
-## Optional Dispatch-Owned ChatGPT Sign-In
+This validates the model artifact contracts, creates a production build, and runs the rendered-HTML test suite.
 
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
+### Retrain the models
 
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
+Place the upstream compressed CSVs in `work/source-data/`, then run:
 
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r pipeline/requirements.txt
+python pipeline/train_model.py
+python pipeline/train_match_model.py
+```
 
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
+The pipelines use the CC0-licensed [dcaribou/transfermarkt-datasets](https://github.com/dcaribou/transfermarkt-datasets). Exact methodology and artifact metadata are documented in [data/README.md](data/README.md).
 
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
+## API
 
-## Useful Commands
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /api/predict` | Valuation model metadata and metrics |
+| `POST /api/predict` | Estimate value from a player profile |
+| `GET /api/scouting` | Search players or retrieve comparable profiles |
+| `GET /api/matches` | List teams or forecast a fixture |
 
-- `npm run dev`: start local development
-- `npm run build`: verify the vinext build output
-- `npm test`: build the starter and verify its rendered loading skeleton
-- `npm run db:generate`: generate Drizzle migrations after schema changes
+See [docs/API.md](docs/API.md) for parameters, examples, and response shapes.
 
-## Learn More
+## Repository map
 
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+```text
+app/        product UI and edge API routes
+data/       versioned inference artifacts
+pipeline/   reproducible Python training jobs
+scripts/    repository and artifact verification
+tests/      rendered-output checks
+docs/       architecture, API, and portfolio material
+```
+
+## Roadmap
+
+- Backtest against bookmaker and simple-frequency baselines
+- Add prediction monitoring and model-drift reporting
+- Introduce team-strength uncertainty and player-position-specific valuation models
+- Expand browser-level tests for all three workflows
+
+## License and attribution
+
+Code is available under the [MIT License](LICENSE). The upstream football dataset is separately released under CC0 1.0 by its maintainers. Touchline is an educational portfolio project and not financial, betting, or recruitment advice.
