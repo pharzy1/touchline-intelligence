@@ -2,7 +2,7 @@
 
 An end-to-end Premier League analytics platform that turns historical football data into three recruiter-facing products: player valuation, similarity scouting, and calibrated match forecasting.
 
-**[Live demo](https://touchline-intelligence.zesty-mole-4007.chatgpt.site/)** · [API reference](docs/API.md) · [Architecture](docs/ARCHITECTURE.md) · [Portfolio notes](docs/PORTFOLIO.md)
+**[Live demo](https://touchlineintelligence.com/)** · [API reference](docs/API.md) · [Architecture](docs/ARCHITECTURE.md) · [Portfolio notes](docs/PORTFOLIO.md)
 
 ![Touchline Intelligence dashboard](public/og.png)
 

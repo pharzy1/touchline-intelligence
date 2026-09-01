@@ -1,6 +1,6 @@
 # API reference
 
-Base URL: `https://touchline-intelligence.zesty-mole-4007.chatgpt.site`
+Base URL: `https://touchlineintelligence.com`
 
 All responses are JSON. Invalid inputs return a `400` response with an `error` field.
 
@@ -23,7 +23,7 @@ All responses are JSON. Invalid inputs return a `400` response with an `error` f
 ```
 
 ```bash
-curl -X POST https://touchline-intelligence.zesty-mole-4007.chatgpt.site/api/predict \
+curl -X POST https://touchlineintelligence.com/api/predict \
   -H 'content-type: application/json' \
   -d '{"age":23,"position":"Attack","appearances":31,"goals":14,"assists":8,"minutes":2410,"internationalCaps":12}'
 ```
