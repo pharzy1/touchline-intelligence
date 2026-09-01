@@ -52,3 +52,6 @@ Matches include a 0–100 similarity score and the three closest shared feature 
 `GET /api/matches?home_id=31&away_id=11` returns calibrated home-win, draw, and away-win probabilities. The two identifiers must be valid and different.
 
 The response also reports the four largest model factors and which side each factor favours.
+### `GET /api/performance`
+
+Returns the public live-model ledger: locked upcoming predictions, recently graded results, cumulative accuracy, mean Brier score, and the model version used. Probabilities are inserted before kickoff and never updated afterward; postponements may update only the kickoff timestamp, while completed fixtures add outcome and grading fields.

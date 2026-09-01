@@ -22,3 +22,11 @@ test("match lab renders calibrated probabilities and baselines", async ({ page }
   await expect(page.getByText(/always-home/)).toBeVisible();
   await expect(page.getByText("HOME WIN")).toBeVisible();
 });
+
+test("live record explains immutable pre-match grading", async ({ page }) => {
+  await page.goto("/matches/performance");
+  await expect(page.getByText("Predict first.")).toBeVisible();
+  await expect(page.getByText("Grade in public.")).toBeVisible();
+  await expect(page.getByText("locked predictions", { exact: true })).toBeVisible();
+  await expect(page.getByText(/before kickoff|scheduled fixture sync/i).first()).toBeVisible();
+});

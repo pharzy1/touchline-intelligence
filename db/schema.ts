@@ -41,3 +41,28 @@ export const predictions = sqliteTable("predictions", {
 export const apiEvents = sqliteTable("api_events", {
   id: integer("id").primaryKey({ autoIncrement: true }), route: text("route").notNull(), status: integer("status").notNull(), latencyMs: integer("latency_ms").notNull(), createdAt: text("created_at").notNull(),
 }, (table) => [index("idx_api_events_route_created").on(table.route, table.createdAt)]);
+
+export const fixturePredictions = sqliteTable("fixture_predictions", {
+  fixtureId: integer("fixture_id").primaryKey(),
+  gameweek: integer("gameweek"),
+  homeTeam: text("home_team").notNull(),
+  awayTeam: text("away_team").notNull(),
+  kickoffAt: text("kickoff_at"),
+  status: text("status").notNull(),
+  modelVersion: text("model_version").notNull(),
+  predictedAt: text("predicted_at").notNull(),
+  homeProbability: real("home_probability").notNull(),
+  drawProbability: real("draw_probability").notNull(),
+  awayProbability: real("away_probability").notNull(),
+  predictedClass: text("predicted_class").notNull(),
+  homeScore: integer("home_score"),
+  awayScore: integer("away_score"),
+  actualClass: text("actual_class"),
+  correct: integer("correct"),
+  brierScore: real("brier_score"),
+  scoredAt: text("scored_at"),
+  sourceUpdatedAt: text("source_updated_at").notNull(),
+}, (table) => [
+  index("idx_fixture_predictions_kickoff").on(table.kickoffAt),
+  index("idx_fixture_predictions_status_kickoff").on(table.status, table.kickoffAt),
+]);

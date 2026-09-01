@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/pharzy1/touchline-intelligence/actions/workflows/ci.yml/badge.svg)](https://github.com/pharzy1/touchline-intelligence/actions/workflows/ci.yml)
 ![Integration tests](https://img.shields.io/badge/integration-9%20passing-18a558)
-![E2E flows](https://img.shields.io/badge/Playwright-3%20golden%20paths-2eAD33)
+![E2E flows](https://img.shields.io/badge/Playwright-4%20golden%20paths-2eAD33)
 
 An end-to-end Premier League analytics platform that turns historical football data into three recruiter-facing products: player valuation, similarity scouting, and calibrated match forecasting.
 
@@ -21,6 +21,7 @@ Most portfolio ML projects stop at a notebook. Touchline carries the work throug
 - **Valuation workbench** estimates a player's market value and uncertainty range from 12 football and profile features.
 - **Scouting lab** retrieves same-position alternatives using standardized Euclidean nearest neighbours and explains the strongest shared signals.
 - **Match lab** returns calibrated home/draw/away probabilities from sequential Elo and rolling five-match form.
+- **Live record** snapshots upcoming predictions before kickoff, grades them after full time, and publishes accuracy and Brier score over time.
 
 ## Architecture
 
@@ -109,6 +110,7 @@ The pipelines use the CC0-licensed [dcaribou/transfermarkt-datasets](https://git
 | `GET /api/scouting` | Search players or retrieve comparable profiles |
 | `GET /api/matches` | List teams or forecast a fixture |
 | `GET /api/stats` | Anonymous API volume and latency aggregates |
+| `GET /api/performance` | Immutable pre-match prediction ledger and live grading metrics |
 
 See [docs/API.md](docs/API.md) for parameters, examples, and response shapes.
 
@@ -128,11 +130,11 @@ docs/       architecture, API, and portfolio material
 - Bootstrap uncertainty intervals and per-prediction ridge coefficient contributions
 - Ridge versus gradient-boosted tree comparison plus 5-fold cross-validation
 - Shareable valuation URLs, explicit match baselines, and D1 request instrumentation
-- Zod validation, typed API errors, structured logs, rate limiting, error recovery, and three Playwright E2E flows
+- Six-hour fixture sync, immutable pre-kickoff predictions, post-match grading, and a public accountability curve
+- Zod validation, typed API errors, structured logs, rate limiting, error recovery, and four Playwright E2E flows
 
 ## Roadmap
 
-- Weekly pre-match prediction and post-match self-grading loop with postponement handling
 - Licensed Wikimedia Commons player-photo cache with attribution metadata
 - Multi-player radar comparison, replacement-cost scenarios, and season-over-season valuation trends
 
