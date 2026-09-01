@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     const runtimeModule = "cloudflare:workers";
     const { env } = await import(/* @vite-ignore */ runtimeModule) as { env: { DB?: D1Database } };
     if (!env.DB) throw new Error("Performance database is not bound");
-    const result = await env.DB.prepare("SELECT fixture_id, gameweek, home_team, away_team, kickoff_at, status, predicted_at, home_probability, draw_probability, away_probability, predicted_class, home_score, away_score, actual_class, correct, brier_score, scored_at FROM fixture_predictions ORDER BY kickoff_at DESC LIMIT 120").all<Row>();
+    const result = await env.DB.prepare("SELECT fixture_id, gameweek, home_team, away_team, kickoff_at, status, predicted_at, home_probability, draw_probability, away_probability, predicted_class, home_score, away_score, actual_class, correct, brier_score, scored_at FROM fixture_predictions ORDER BY kickoff_at DESC LIMIT 500").all<Row>();
     const fixtures = result.results; const graded = fixtures.filter((row) => row.actual_class !== null).reverse(); let wins = 0;
     const timeline = graded.map((row, index) => { wins += row.correct ?? 0; return { fixtureId: row.fixture_id, kickoffAt: row.kickoff_at, accuracy: wins / (index + 1), correct: row.correct === 1 }; });
     const next = fixtures.filter((row) => row.status === "scheduled").sort((a, b) => String(a.kickoff_at).localeCompare(String(b.kickoff_at))).slice(0, 8);

@@ -29,7 +29,7 @@ type FplTeam = { id: number; name: string };
 
 const aliases: Record<string, string> = {
   "bournemouth": "AFC Bournemouth", "arsenal": "Arsenal FC", "aston villa": "Aston Villa", "brentford": "Brentford FC", "brighton": "Brighton & Hove Albion",
-  "chelsea": "Chelsea FC", "crystal palace": "Crystal Palace", "everton": "Everton FC", "fulham": "Fulham FC", "leeds": "Leeds United", "liverpool": "Liverpool FC",
+  "burnley": "Burnley FC", "chelsea": "Chelsea FC", "crystal palace": "Crystal Palace", "everton": "Everton FC", "fulham": "Fulham FC", "leeds": "Leeds United", "liverpool": "Liverpool FC",
   "man city": "Manchester City", "man utd": "Manchester United", "newcastle": "Newcastle United", "nott'm forest": "Nottingham Forest", "sunderland": "Sunderland AFC",
   "spurs": "Tottenham Hotspur", "west ham": "West Ham United", "wolves": "Wolverhampton Wanderers",
 };
@@ -52,7 +52,7 @@ async function syncFixtures(env: Env) {
   const fixtures = await fixturesResponse.json() as FplFixture[];
   const names = new Map(bootstrap.teams.map((team) => [team.id, team.name]));
   const modelTeams = new Map(matchModel.teams.map((team) => [team.name, team]));
-  const now = new Date(); const nowIso = now.toISOString(); const statements: D1PreparedStatement[] = [];
+  const now = new Date(); const nowIso = now.toISOString(); const forecastHorizon = new Date(now.getTime() + 21 * 24 * 60 * 60 * 1000); const statements: D1PreparedStatement[] = [env.DB.prepare("DELETE FROM fixture_predictions WHERE status = 'scheduled' AND kickoff_at > ?").bind(forecastHorizon.toISOString())];
   let created = 0; let graded = 0; let skipped = 0;
 
   for (const fixture of fixtures) {
@@ -61,7 +61,7 @@ async function syncFixtures(env: Env) {
     const away = awayName ? modelTeams.get(aliases[awayName.toLowerCase()] ?? awayName) : undefined;
     if (!homeName || !awayName || !home || !away || !fixture.kickoff_time) { skipped += 1; continue; }
     const kickoff = new Date(fixture.kickoff_time);
-    if (!fixture.finished && kickoff > now) {
+    if (!fixture.finished && kickoff > now && kickoff <= forecastHorizon) {
       const probabilities = fixtureProbabilities(home, away); const predictedClass = matchModel.classes[probabilities.indexOf(Math.max(...probabilities))];
       statements.push(env.DB.prepare(`INSERT OR IGNORE INTO fixture_predictions (fixture_id, gameweek, home_team, away_team, kickoff_at, status, model_version, predicted_at, home_probability, draw_probability, away_probability, predicted_class, source_updated_at) VALUES (?, ?, ?, ?, ?, 'scheduled', ?, ?, ?, ?, ?, ?, ?)`).bind(fixture.id, fixture.event, homeName, awayName, fixture.kickoff_time, matchModel.version, nowIso, probabilities[0], probabilities[1], probabilities[2], predictedClass, nowIso));
       statements.push(env.DB.prepare("UPDATE fixture_predictions SET gameweek = ?, kickoff_at = ?, status = 'scheduled', source_updated_at = ? WHERE fixture_id = ? AND actual_class IS NULL").bind(fixture.event, fixture.kickoff_time, nowIso, fixture.id));
