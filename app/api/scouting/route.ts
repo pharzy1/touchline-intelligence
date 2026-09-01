@@ -1,4 +1,6 @@
 import index from "../../../data/scouting-index.json";
+import { z } from "zod";
+import { apiError, parse, rateLimit, recordEvent } from "../shared";
 
 export const runtime = "edge";
 
@@ -19,24 +21,27 @@ function distance(left: Player, right: Player) {
 }
 
 export async function GET(request: Request) {
+  const startedAt = Date.now(); const limited = rateLimit(request, 90); if (limited) return limited;
   const params = new URL(request.url).searchParams;
-  const playerId = Number(params.get("player_id"));
+  let input: { player_id?: number; q?: string; position?: string; max_age?: number; max_value_eur?: number; club?: string };
+  try { input = parse(z.object({ player_id: z.coerce.number().int().positive().optional(), q: z.string().max(80).optional(), position: z.enum(["Attack", "Midfield", "Defender", "Goalkeeper", ""]).optional(), max_age: z.coerce.number().int().min(16).max(99).optional(), max_value_eur: z.coerce.number().int().positive().optional(), club: z.string().max(80).optional() }), Object.fromEntries(params)); } catch (error) { return apiError(error); }
+  const playerId = input.player_id ?? 0;
   if (!playerId) {
-    const query = (params.get("q") ?? "").trim().toLowerCase();
-    const position = params.get("position") ?? "";
+    const query = (input.q ?? "").trim().toLowerCase();
+    const position = input.position ?? "";
     const players = index.players
       .filter((player) => (!query || `${player.name} ${player.club}`.toLowerCase().includes(query)) && (!position || player.position === position))
       .sort((a, b) => b.market_value_eur - a.market_value_eur)
       .slice(0, 20)
       .map(summary);
-    return Response.json({ version: index.version, players });
+    await recordEvent("/api/scouting", 200, startedAt); return Response.json({ version: index.version, players });
   }
 
   const selected = index.players.find((player) => player.player_id === playerId);
   if (!selected) return Response.json({ error: "Player not found" }, { status: 404 });
-  const maxAge = Number(params.get("max_age")) || 99;
-  const maxValue = Number(params.get("max_value_eur")) || Number.MAX_SAFE_INTEGER;
-  const club = params.get("club") ?? "any";
+  const maxAge = input.max_age ?? 99;
+  const maxValue = input.max_value_eur ?? Number.MAX_SAFE_INTEGER;
+  const club = input.club ?? "any";
   const matches = index.players
     .filter((player) => player.player_id !== selected.player_id && player.position === selected.position && player.age <= maxAge && player.market_value_eur <= maxValue && (club === "any" || (club === "different" ? player.club !== selected.club : player.club === club)))
     .map((player) => {
@@ -51,5 +56,5 @@ export async function GET(request: Request) {
     .sort((a, b) => a.distance - b.distance)
     .slice(0, 5)
     .map(({ distance: _distance, ...player }) => player);
-  return Response.json({ version: index.version, method: index.method, features: index.features, selected: summary(selected), matches });
+  await recordEvent("/api/scouting", 200, startedAt); return Response.json({ version: index.version, method: index.method, features: index.features, selected: summary(selected), matches });
 }

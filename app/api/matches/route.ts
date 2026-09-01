@@ -1,4 +1,6 @@
 import model from "../../../data/match-model.json";
+import { z } from "zod";
+import { apiError, parse, rateLimit, recordEvent } from "../shared";
 
 export const runtime = "edge";
 
@@ -20,8 +22,11 @@ function teamFeatures(home: Team, away: Team) {
 }
 
 export async function GET(request: Request) {
+  const startedAt = Date.now(); const limited = rateLimit(request, 90); if (limited) return limited;
   const params = new URL(request.url).searchParams;
-  const homeId = Number(params.get("home_id")); const awayId = Number(params.get("away_id"));
+  let ids: { home_id?: number; away_id?: number };
+  try { ids = parse(z.object({ home_id: z.coerce.number().int().positive().optional(), away_id: z.coerce.number().int().positive().optional() }), Object.fromEntries(params)); } catch (error) { return apiError(error); }
+  const homeId = ids.home_id ?? 0; const awayId = ids.away_id ?? 0;
   if (!homeId && !awayId) return Response.json({ version: model.version, teams: model.teams, metrics: model.metrics, split: model.split });
   if (!homeId || !awayId || homeId === awayId) return Response.json({ error: "Choose two different teams" }, { status: 400 });
   const home = model.teams.find((team) => team.club_id === homeId); const away = model.teams.find((team) => team.club_id === awayId);
@@ -30,5 +35,6 @@ export async function GET(request: Request) {
   const logits = model.classes.map((_, classIndex) => design.reduce((total, value, featureIndex) => total + value * model.weights[featureIndex][classIndex], 0) / model.temperature);
   const probabilities = softmax(logits);
   const contributions = model.features.map((feature, i) => ({ label: featureLabels[feature] ?? feature, edge: standardized[i] * (model.weights[i + 1][0] - model.weights[i + 1][2]) })).sort((a, b) => Math.abs(b.edge) - Math.abs(a.edge)).slice(0, 4).map((item) => ({ ...item, favors: item.edge >= 0 ? "home" : "away" }));
+  await recordEvent("/api/matches", 200, startedAt);
   return Response.json({ version: model.version, home, away, probabilities: { home_win: probabilities[0], draw: probabilities[1], away_win: probabilities[2] }, factors: contributions, metrics: model.metrics, calibrated: true });
 }

@@ -1,6 +1,6 @@
 {
   "version": "match-softmax-2025-v1",
-  "trained_at": "2026-08-31T22:42:50.835011+00:00",
+  "trained_at": "2026-09-01T22:48:33.468869+00:00",
   "competition": "GB1",
   "latest_season": 2025,
   "calibration_season": 2024,
@@ -108,7 +108,13 @@
     "test_matches": 380,
     "accuracy": 0.4816,
     "log_loss": 1.031,
-    "brier_score": 0.6201
+    "brier_score": 0.6201,
+    "baselines": {
+      "always_home_accuracy": 0.4263,
+      "majority_class": "home_win",
+      "majority_class_accuracy": 0.4263,
+      "elo_favorite_accuracy": 0.4947
+    }
   },
   "teams": [
     {

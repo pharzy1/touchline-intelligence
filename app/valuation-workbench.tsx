@@ -30,8 +30,15 @@ export function ValuationWorkbench() {
   const [goals, setGoals] = useState(14);
   const [assists, setAssists] = useState(8);
   const [minutes, setMinutes] = useState(2360);
-  const [result, setResult] = useState<{ estimateEur: number; lowEur: number; highEur: number; version: string; metrics: { r2: number } } | null>(null);
+  const [result, setResult] = useState<{ estimateEur: number; lowEur: number; highEur: number; intervalMethod: string; contributions: { label: string; impactEur: number; direction: "up" | "down" }[]; version: string; metrics: { r2: number } } | null>(null);
   const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const number = (key: string, fallback: number) => params.has(key) ? Number(params.get(key)) || fallback : fallback;
+    setAge(number("age", 23)); setPosition(params.get("position") ?? "Attack"); setAppearances(number("appearances", 31)); setGoals(number("goals", 14)); setAssists(number("assists", 8)); setMinutes(number("minutes", 2360));
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -48,12 +55,13 @@ export function ValuationWorkbench() {
     return () => { window.clearTimeout(timer); controller.abort(); };
   }, [age, position, appearances, goals, assists, minutes]);
 
+  useEffect(() => {
+    const params = new URLSearchParams({ age: String(age), position, appearances: String(appearances), goals: String(goals), assists: String(assists), minutes: String(minutes) });
+    window.history.replaceState(null, "", `${window.location.pathname}?${params}${window.location.hash}`);
+  }, [age, position, appearances, goals, assists, minutes]);
+
   const confidence = result ? Math.round(Math.max(45, Math.min(90, result.metrics.r2 * 100))) : 0;
-  const factors = [
-    { name: "Goal contribution", value: Math.min(96, 30 + goals * 2.2 + assists), positive: goals + assists >= 8 },
-    { name: "Age profile", value: Math.max(20, 100 - Math.abs(age - 24) * 9), positive: age <= 28 },
-    { name: "Availability", value: Math.round((appearances / 38) * 90), positive: appearances >= 24 },
-  ];
+  const copyLink = async () => { await navigator.clipboard.writeText(window.location.href); setCopied(true); window.setTimeout(() => setCopied(false), 1600); };
 
   return (
     <div className="workbench shell">
@@ -76,7 +84,8 @@ export function ValuationWorkbench() {
           <div className="distribution-labels"><span>€0</span><span>€50m</span><span>€100m</span><span>€150m+</span></div>
           <div className="distribution-line">{result && <><div className="range-band" style={{ left: `${Math.min(88, result.lowEur / 1_500_000)}%`, width: `${Math.min(25, (result.highEur - result.lowEur) / 1_500_000)}%` }} /><div className="estimate-pin" style={{ left: `${Math.min(96, result.estimateEur / 1_500_000)}%` }}><span>{money(result.estimateEur)}</span></div></>}</div>
         </div>
-        <div className="drivers"><span>PROFILE SIGNALS</span>{factors.map((factor) => <div className="driver" key={factor.name}><span>{factor.name}</span><div><i style={{ width: `${factor.value}%` }} /></div><strong className={factor.positive ? "up" : "down"}>{factor.positive ? "↗" : "↘"}</strong></div>)}</div>
+        <div className="drivers"><span>MODEL CONTRIBUTIONS</span>{result?.contributions.slice(0, 4).map((factor) => <div className="driver" key={factor.label}><span>{factor.label}</span><div><i style={{ width: `${Math.min(100, 25 + Math.abs(factor.impactEur) / Math.max(1, result.estimateEur) * 130)}%` }} /></div><strong className={factor.direction}>{factor.direction === "up" ? "+" : "−"}{money(Math.abs(factor.impactEur))}</strong></div>)}</div>
+        <button type="button" className="share-link" onClick={copyLink}>{copied ? "Link copied" : "Copy this prediction link"}</button>
         <p className="disclaimer">{result ? `${result.version} · trained on 2025/26 Premier League profiles · CC0 source data. Estimates are directional, not recruitment advice.` : "Loading versioned model…"}</p>
       </div>
     </div>

@@ -101,6 +101,12 @@ def main():
     temperature = min(temperatures, key=lambda value: -np.mean(np.log(np.maximum(softmax(calibration_logits / value)[np.arange(calibration.sum()), y[calibration]], 1e-12))))
     test_logits = np.column_stack([np.ones(test.sum()), Xz[test]]) @ weights
     test_probability = softmax(test_logits / temperature)
+    test_target = y[test]
+    always_home_accuracy = float(np.mean(test_target == 0))
+    majority_class = int(np.bincount(test_target, minlength=3).argmax())
+    majority_accuracy = float(np.mean(test_target == majority_class))
+    elo_favorite = np.where(X[test, 0] + 65 >= 0, 0, 2)
+    elo_favorite_accuracy = float(np.mean(elo_favorite == test_target))
     current_clubs = {game["home_club_id"] for game in games if int(game["season"]) == latest} | {game["away_club_id"] for game in games if int(game["season"]) == latest}
     teams = []
     for club_id in sorted(current_clubs, key=lambda value: names[value]):
@@ -117,7 +123,8 @@ def main():
         "classes": CLASSES, "features": FEATURES, "mean": mean.round(8).tolist(), "scale": scale.round(8).tolist(),
         "weights": weights.round(10).tolist(), "temperature": round(float(temperature), 4),
         "split": {"method": "season_ordered", "train_through": calibration_season - 1, "calibration_season": calibration_season, "test_season": latest},
-        "metrics": {"train_matches": int(train.sum()), "calibration_matches": int(calibration.sum()), "test_matches": int(test.sum()), **metrics(test_probability, y[test])},
+        "metrics": {"train_matches": int(train.sum()), "calibration_matches": int(calibration.sum()), "test_matches": int(test.sum()), **metrics(test_probability, test_target),
+                    "baselines": {"always_home_accuracy": round(always_home_accuracy, 4), "majority_class": CLASSES[majority_class], "majority_class_accuracy": round(majority_accuracy, 4), "elo_favorite_accuracy": round(elo_favorite_accuracy, 4)}},
         "teams": teams,
         "source": {"name": "dcaribou/transfermarkt-datasets", "license": "CC0-1.0", "url": "https://github.com/dcaribou/transfermarkt-datasets"},
     }

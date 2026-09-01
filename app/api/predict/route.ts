@@ -1,8 +1,16 @@
 import model from "../../../data/valuation-model.json";
+import { z } from "zod";
+import { apiError, parse, rateLimit, recordEvent } from "../shared";
 
 export const runtime = "edge";
 
 type Input = { age: number; position: string; appearances: number; goals: number; assists: number; minutes: number; internationalCaps?: number };
+
+const inputSchema = z.object({
+  age: z.coerce.number().min(16).max(42), position: z.enum(["Attack", "Midfield", "Defender", "Goalkeeper"]),
+  appearances: z.coerce.number().min(1).max(38), goals: z.coerce.number().min(0).max(45), assists: z.coerce.number().min(0).max(35),
+  minutes: z.coerce.number().min(1).max(3420), internationalCaps: z.coerce.number().min(0).max(220).optional().default(0),
+});
 
 const limits = {
   age: [16, 42], appearances: [1, 38], goals: [0, 45], assists: [0, 35], minutes: [1, 3420], internationalCaps: [0, 220],
@@ -30,10 +38,13 @@ function predict(input: Input) {
     is_goalkeeper: position === "Goalkeeper" ? 1 : 0,
   };
   let logValue = model.intercept;
-  model.features.forEach((feature, index) => { logValue += ((values[feature] - model.mean[index]) / model.scale[index]) * model.coefficients[index]; });
+  const logContributions = model.features.map((feature, index) => ({ feature, impact: ((values[feature] - model.mean[index]) / model.scale[index]) * model.coefficients[index] }));
+  logContributions.forEach(({ impact }) => { logValue += impact; });
   const estimate = Math.max(250_000, Math.expm1(logValue));
-  const spread = model.uncertainty_ratio;
-  return { estimateEur: Math.round(estimate), lowEur: Math.round(estimate * (1 - spread)), highEur: Math.round(estimate * (1 + spread)), values };
+  const samples = model.prediction_interval.coefficients.map((coefficients, sampleIndex) => Math.max(250_000, Math.expm1(model.prediction_interval.intercepts[sampleIndex] + coefficients.reduce((sum, coefficient, index) => sum + coefficient * ((values[model.features[index]] - model.mean[index]) / model.scale[index]), 0)))).sort((a, b) => a - b);
+  const labels: Record<string, string> = { age: "Age", appearances: "Availability", goals: "Goals", assists: "Assists", goals_per_90: "Goals / 90", assists_per_90: "Assists / 90", international_caps: "International caps", is_forward: "Forward role", is_midfielder: "Midfield role", is_defender: "Defender role", is_goalkeeper: "Goalkeeper role" };
+  const contributions = logContributions.map(({ feature, impact }) => ({ feature, label: labels[feature] ?? feature, impactEur: Math.round(estimate * (Math.exp(impact) - 1)), direction: impact >= 0 ? "up" : "down" })).sort((a, b) => Math.abs(b.impactEur) - Math.abs(a.impactEur)).slice(0, 5);
+  return { estimateEur: Math.round(estimate), lowEur: Math.round(samples[Math.floor(samples.length * .1)]), highEur: Math.round(samples[Math.floor(samples.length * .9)]), intervalMethod: model.prediction_interval.method, contributions, values };
 }
 
 async function persistPrediction(input: Input, estimateEur: number) {
@@ -58,12 +69,15 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const startedAt = Date.now();
+  const limited = rateLimit(request); if (limited) return limited;
   try {
-    const input = await request.json() as Input;
+    const input = parse(inputSchema, await request.json()) as Input;
     const result = predict(input);
     await persistPrediction(input, result.estimateEur);
+    await recordEvent("/api/predict", 200, startedAt);
     return Response.json({ ...result, version: model.version, metrics: model.metrics, currency: model.currency });
   } catch (error) {
-    return Response.json({ error: error instanceof Error ? error.message : "Invalid request" }, { status: 400 });
+    await recordEvent("/api/predict", 400, startedAt); return apiError(error);
   }
 }

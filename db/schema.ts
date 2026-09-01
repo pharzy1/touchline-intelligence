@@ -37,3 +37,7 @@ export const predictions = sqliteTable("predictions", {
   estimateEur: integer("estimate_eur").notNull(),
   createdAt: text("created_at").notNull(),
 }, (table) => [index("idx_predictions_model_created").on(table.modelVersion, table.createdAt)]);
+
+export const apiEvents = sqliteTable("api_events", {
+  id: integer("id").primaryKey({ autoIncrement: true }), route: text("route").notNull(), status: integer("status").notNull(), latencyMs: integer("latency_ms").notNull(), createdAt: text("created_at").notNull(),
+}, (table) => [index("idx_api_events_route_created").on(table.route, table.createdAt)]);

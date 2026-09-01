@@ -18,6 +18,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 
 import numpy as np
+from sklearn.ensemble import GradientBoostingRegressor
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "work" / "source-data"
@@ -30,6 +31,30 @@ FEATURES = [
     "is_forward", "is_midfielder", "is_defender", "is_goalkeeper",
 ]
 SCOUT_FEATURES = ["age", "appearances", "goals_per_90", "assists_per_90", "minutes_per_appearance", "international_caps"]
+
+
+def ridge_fit(X: np.ndarray, y: np.ndarray, train_idx: np.ndarray):
+    mean = X[train_idx].mean(axis=0)
+    scale = X[train_idx].std(axis=0)
+    scale[scale == 0] = 1
+    standardized = (X - mean) / scale
+    design = np.column_stack([np.ones(len(train_idx)), standardized[train_idx]])
+    penalty = np.eye(design.shape[1]) * 1.5
+    penalty[0, 0] = 0
+    weights = np.linalg.solve(design.T @ design + penalty, design.T @ y[train_idx])
+    return mean, scale, weights
+
+
+def ridge_predict(X: np.ndarray, mean: np.ndarray, scale: np.ndarray, weights: np.ndarray, indices: np.ndarray):
+    standardized = (X[indices] - mean) / scale
+    return np.maximum(np.expm1(np.column_stack([np.ones(len(indices)), standardized]) @ weights), 0)
+
+
+def regression_metrics(predicted: np.ndarray, actual: np.ndarray):
+    return {
+        "mae_eur": float(np.mean(np.abs(predicted - actual))),
+        "r2": float(1 - np.sum((actual - predicted) ** 2) / np.sum((actual - actual.mean()) ** 2)),
+    }
 
 
 def read_gzip_csv(name: str):
@@ -113,23 +138,41 @@ def main() -> None:
     indices = rng.permutation(len(records))
     split = int(len(records) * 0.8)
     train_idx, test_idx = indices[:split], indices[split:]
-    mean = X[train_idx].mean(axis=0)
-    scale = X[train_idx].std(axis=0)
-    scale[scale == 0] = 1
-    Xz = (X - mean) / scale
-    design = np.column_stack([np.ones(len(train_idx)), Xz[train_idx]])
-    penalty = np.eye(design.shape[1]) * 1.5
-    penalty[0, 0] = 0
-    weights = np.linalg.solve(design.T @ design + penalty, design.T @ y[train_idx])
-
-    predicted = np.expm1(np.column_stack([np.ones(len(test_idx)), Xz[test_idx]]) @ weights)
-    predicted = np.maximum(predicted, 0)
+    mean, scale, weights = ridge_fit(X, y, train_idx)
+    predicted = ridge_predict(X, mean, scale, weights, test_idx)
     actual = y_eur[test_idx]
     mae = float(np.mean(np.abs(predicted - actual)))
     r2 = float(1 - np.sum((actual - predicted) ** 2) / np.sum((actual - actual.mean()) ** 2))
     median_ape = float(np.median(np.abs(predicted - actual) / np.maximum(actual, 1)))
     residual_ratio = np.abs(predicted - actual) / np.maximum(predicted, 1)
     uncertainty = float(np.clip(np.quantile(residual_ratio, 0.68), 0.18, 0.75))
+
+    folds = np.array_split(indices, 5)
+    cross_validation = []
+    for fold_index, fold in enumerate(folds):
+        fold_train = np.concatenate([part for index, part in enumerate(folds) if index != fold_index])
+        fold_mean, fold_scale, fold_weights = ridge_fit(X, y, fold_train)
+        fold_prediction = ridge_predict(X, fold_mean, fold_scale, fold_weights, fold)
+        fold_metrics = regression_metrics(fold_prediction, y_eur[fold])
+        cross_validation.append(fold_metrics)
+
+    boosted = GradientBoostingRegressor(random_state=42, n_estimators=180, learning_rate=0.035, max_depth=2, loss="huber")
+    boosted.fit(X[train_idx], y[train_idx])
+    boosted_prediction = np.maximum(np.expm1(boosted.predict(X[test_idx])), 0)
+    boosted_metrics = regression_metrics(boosted_prediction, actual)
+
+    bootstrap_rng = np.random.default_rng(2026)
+    bootstrap_intercepts = []
+    bootstrap_coefficients = []
+    Xz = (X - mean) / scale
+    for _ in range(120):
+        sample = bootstrap_rng.choice(train_idx, size=len(train_idx), replace=True)
+        design = np.column_stack([np.ones(len(sample)), Xz[sample]])
+        penalty = np.eye(design.shape[1]) * 1.5
+        penalty[0, 0] = 0
+        sample_weights = np.linalg.solve(design.T @ design + penalty, design.T @ y[sample])
+        bootstrap_intercepts.append(round(float(sample_weights[0]), 10))
+        bootstrap_coefficients.append(sample_weights[1:].round(10).tolist())
 
     artifact = {
         "version": MODEL_VERSION,
@@ -145,6 +188,13 @@ def main() -> None:
         "intercept": float(weights[0]),
         "coefficients": weights[1:].round(10).tolist(),
         "uncertainty_ratio": uncertainty,
+        "prediction_interval": {
+            "method": "seeded_bootstrap_percentile_80",
+            "seed": 2026,
+            "samples": len(bootstrap_intercepts),
+            "intercepts": bootstrap_intercepts,
+            "coefficients": bootstrap_coefficients,
+        },
         "metrics": {
             "records": len(records),
             "train_records": len(train_idx),
@@ -152,6 +202,19 @@ def main() -> None:
             "mae_eur": round(mae),
             "r2": round(r2, 4),
             "median_absolute_percentage_error": round(median_ape, 4),
+            "cross_validation": {
+                "folds": 5,
+                "r2_mean": round(float(np.mean([item["r2"] for item in cross_validation])), 4),
+                "r2_std": round(float(np.std([item["r2"] for item in cross_validation])), 4),
+                "mae_eur_mean": round(float(np.mean([item["mae_eur"] for item in cross_validation]))),
+                "mae_eur_std": round(float(np.std([item["mae_eur"] for item in cross_validation]))),
+            },
+            "model_comparison": {
+                "ridge": {"r2": round(r2, 4), "mae_eur": round(mae)},
+                "gradient_boosted_trees": {"r2": round(boosted_metrics["r2"], 4), "mae_eur": round(boosted_metrics["mae_eur"])},
+                "serving_choice": "ridge",
+                "reason": "Ridge remains the serving baseline for stable, inspectable per-feature contributions.",
+            },
         },
         "split": {"method": "seeded_random_80_20", "seed": 42},
         "source": {
