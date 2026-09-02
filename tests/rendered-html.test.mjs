@@ -53,7 +53,7 @@ test("renders the shareable player comparison workspace", async () => {
 
 test("renders the shareable squad planning workspace", async () => {
   const response = await render("/squad-planner"); const html = await response.text();
-  assert.equal(response.status, 200); assert.match(html, /Squad Planner — Touchline/); assert.match(html, /Build the XI/); assert.match(html, /SQUAD DIAGNOSIS/); assert.match(html, /MODEL-BACKED ALTERNATIVES/);
+  assert.equal(response.status, 200); assert.match(html, /Squad Planner — Touchline/); assert.match(html, /Build the XI/); assert.match(html, /SQUAD DIAGNOSIS/); assert.match(html, /MODEL-BACKED ALTERNATIVES/); assert.match(html, /SQUAD DEPTH/); assert.match(html, /BEFORE VS AFTER/); assert.match(html, /SAVED PLANS/);
 });
 
 test("renders the photo-credit ledger", async () => {

@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/pharzy1/touchline-intelligence/actions/workflows/ci.yml/badge.svg)](https://github.com/pharzy1/touchline-intelligence/actions/workflows/ci.yml)
 ![Integration tests](https://img.shields.io/badge/integration-17%20passing-18a558)
-![E2E flows](https://img.shields.io/badge/Playwright-10%20golden%20paths-2eAD33)
+![E2E flows](https://img.shields.io/badge/Playwright-11%20golden%20paths-2eAD33)
 
 An end-to-end Premier League analytics platform that turns historical football data into an integrated suite for squad planning, player valuation, similarity scouting, transfer analysis, and calibrated match forecasting.
 
@@ -21,7 +21,7 @@ Most portfolio ML projects stop at a notebook. Touchline carries the work throug
 - **Valuation workbench** estimates a player's market value and uncertainty range from 12 football and profile features.
 - **Scouting lab** retrieves same-position alternatives using standardized Euclidean nearest neighbours and explains the strongest shared signals.
 - **Transfer builder** composes scouting and valuation into shareable replacement-cost scenarios with multi-player radar comparisons.
-- **Squad planner** builds club or custom XIs across three formations, diagnoses weak roles, finds affordable model-backed replacements, and tracks transfer-window net spend in a shareable URL.
+- **Squad planner** builds 23-player club or custom squads across three formations, diagnoses coverage and roster risk, finds affordable model-backed replacements, compares the squad before and after a window, and reopens named plans saved on-device.
 - **Licensed media pipeline** caches vetted Commons thumbnails, stores author/licence/source metadata, and falls back safely when identity is uncertain.
 - **Match lab** returns calibrated home/draw/away probabilities from sequential Elo and rolling five-match form.
 - **Live record** snapshots upcoming predictions before kickoff, grades them after full time, and publishes accuracy and Brier score over time.
@@ -90,7 +90,7 @@ Open `http://localhost:3000`. The committed model artifacts make local inference
 pnpm check
 ```
 
-This validates model artifact contracts, creates a production build, and runs the rendered-HTML integration suite. `pnpm test:e2e` adds Playwright coverage for valuation, scouting, squad planning, transfers, player histories, matches, live performance, production status, and the model registry. GitHub Actions runs both suites on every push and pull request and retains Playwright reports and traces for diagnosis.
+This validates model artifact contracts, creates a production build, and runs the rendered-HTML integration suite. `pnpm test:e2e` adds Playwright coverage for valuation, scouting, squad planning and saved-plan recovery, transfers, player histories, matches, live performance, production status, and the model registry. GitHub Actions runs both suites on every push and pull request and retains Playwright reports and traces for diagnosis.
 
 ### Retrain the models
 
@@ -137,8 +137,8 @@ docs/       architecture, API, and portfolio material
 - Shareable valuation URLs, explicit match baselines, and D1 request instrumentation
 - Six-hour fixture sync, immutable pre-kickoff predictions, post-match grading, and a public accountability curve
 - Pipeline-time Wikimedia Commons enrichment with local caching, artifact validation, attribution UI, and position-based fallback avatars
-- Zod validation, typed API errors, structured logs, rate limiting, error recovery, and ten Playwright E2E flows
-- Interactive squad planning across three formations with role diagnosis, affordability-constrained replacements, transfer accounting, and shareable state
+- Zod validation, typed API errors, structured logs, rate limiting, error recovery, and eleven Playwright E2E flows
+- Interactive 23-player squad planning across three formations with depth/risk diagnostics, affordability-constrained replacements, before/after analysis, transfer accounting, shareable state, and versioned local plan storage
 - Weekly governed retraining with challenger comparison, feature/prediction drift gates, pull-request promotion, and Git-backed rollback
 
 ## Roadmap

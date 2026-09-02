@@ -22,7 +22,7 @@ export default function SquadPlannerPage() {
       <div className="eyebrow"><span /> SQUAD PLANNER / 05</div>
       <div><h1>Build the XI.<br /><em>Stress-test the window.</em></h1><p>Shape a formation, identify the weakest statistical fits, and replace them without losing sight of the budget. Every recommendation links back to the underlying player evidence.</p></div>
     </header>
-    <SquadPlanner players={players} modelVersion={scouting.version} />
+    <SquadPlanner players={players} modelVersion={scouting.version} datasetUpdatedAt={scouting.created_at} season={scouting.season} />
     <footer className="footer shell"><div className="brand"><span className="brand-mark">T</span><span>TOUCHLINE</span></div><p>Model-backed planning · shareable scenarios</p><a href="/transfers">Transfer builder →</a></footer>
   </main>;
 }
