@@ -13,7 +13,7 @@ export default function Home() {
         <h1>Find the signal<br />before the market does.</h1>
         <div className="hero-foot">
           <p>Decision tools for player valuation, squad planning, and match analysis—built on transparent, reproducible data.</p>
-          <a className="primary-cta" href="/transfers">Build a transfer scenario <span aria-hidden="true">↗</span></a>
+          <a className="primary-cta" href="/squad-planner">Plan a squad <span aria-hidden="true">↗</span></a>
         </div>
         <div className="hero-rule" />
         <div className="ticker" aria-label="Platform statistics">
@@ -50,7 +50,8 @@ export default function Home() {
             <article className="roadmap-card live"><span className="status">LIVE</span><span className="number">01</span><h3>Value a player</h3><p>Estimate market value from performance, age, position, and experience.</p><a href="/valuation">Try the model <Arrow /></a></article>
             <article className="roadmap-card live-secondary"><span className="status">LIVE</span><span className="number">02</span><h3>Find a profile</h3><p>Surface statistically similar players within recruitment constraints.</p><a href="/scouting">Open scouting lab <Arrow /></a></article>
             <article className="roadmap-card live-tertiary"><span className="status">LIVE</span><span className="number">03</span><h3>Read the match</h3><p>Compare team form and estimate calibrated win, draw, and loss probabilities.</p><a href="/matches">Open match lab <Arrow /></a></article>
-            <article className="roadmap-card live-transfer"><span className="status">NEW</span><span className="number">04</span><h3>Plan a transfer</h3><p>Compare replacement profiles, model costs, trade-offs, and potential savings.</p><a href="/transfers">Build a scenario <Arrow /></a></article>
+            <article className="roadmap-card live-transfer"><span className="status">LIVE</span><span className="number">04</span><h3>Plan a transfer</h3><p>Compare replacement profiles, model costs, trade-offs, and potential savings.</p><a href="/transfers">Build a scenario <Arrow /></a></article>
+            <article className="roadmap-card live-planner"><span className="status">NEW</span><span className="number">05</span><h3>Build the squad</h3><p>Shape an XI, expose positional gaps, and spend a transfer budget with model-backed alternatives.</p><a href="/squad-planner">Open squad planner <Arrow /></a></article>
           </div>
         </div>
       </section>

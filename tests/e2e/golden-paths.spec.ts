@@ -16,6 +16,19 @@ test("transfer builder composes scouting and valuation", async ({ page }) => {
   await expect(page).toHaveURL(/alternatives=/);
 });
 
+test("squad planner models a shareable transfer window", async ({ page }) => {
+  await page.goto("/squad-planner");
+  await expect(page.getByText("SQUAD DIAGNOSIS")).toBeVisible();
+  await page.getByLabel("Formation", { exact: true }).selectOption("4-2-3-1");
+  await page.getByLabel("Transfer budget").fill("150");
+  await expect(page).toHaveURL(/formation=4-2-3-1/);
+  await expect(page).toHaveURL(/budget=150/);
+  await page.getByRole("button", { name: /REPLACE/ }).first().click();
+  await expect(page.getByText("1 proposed move")).toBeVisible();
+  await expect(page.getByText("PLAYER PURCHASES")).toBeVisible();
+  await expect(page).toHaveURL(/squad=/);
+});
+
 test("comparison workspace loads shareable player evidence", async ({ page }) => {
   await page.goto("/compare?players=433177,583255");
   await expect(page.getByText("PROFILE SHAPE")).toBeVisible();

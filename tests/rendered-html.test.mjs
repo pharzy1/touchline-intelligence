@@ -51,6 +51,11 @@ test("renders the shareable player comparison workspace", async () => {
   assert.equal(response.status, 200); assert.match(html, /Player Comparison — Touchline/); assert.match(html, /See the trade-offs/); assert.match(html, /Player comparison workspace/);
 });
 
+test("renders the shareable squad planning workspace", async () => {
+  const response = await render("/squad-planner"); const html = await response.text();
+  assert.equal(response.status, 200); assert.match(html, /Squad Planner — Touchline/); assert.match(html, /Build the XI/); assert.match(html, /SQUAD DIAGNOSIS/); assert.match(html, /MODEL-BACKED ALTERNATIVES/);
+});
+
 test("renders the photo-credit ledger", async () => {
   const response = await render("/photo-credits"); const html = await response.text();
   assert.equal(response.status, 200); assert.match(html, /Player photo credits/); assert.match(html, /Wikimedia Commons source/); assert.match(html, /Fallback policy/);
