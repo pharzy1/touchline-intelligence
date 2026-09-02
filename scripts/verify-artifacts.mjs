@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 
 const load = async (name) => JSON.parse(await readFile(new URL(`../data/${name}`, import.meta.url), "utf8"));
-const [valuation, scouting, match] = await Promise.all([
+const [valuation, scouting, match, images] = await Promise.all([
   load("valuation-model.json"),
   load("scouting-index.json"),
   load("match-model.json"),
+  load("player-images.json"),
 ]);
 
 assert.match(valuation.version, /^valuation-/);
@@ -29,4 +30,13 @@ assert.ok(match.split.train_through < match.split.calibration_season);
 assert.ok(match.split.calibration_season < match.split.test_season);
 assert.ok(match.metrics.test_matches > 0);
 
-console.log(`Verified ${valuation.version}, ${scouting.version}, and ${match.version}.`);
+assert.match(images.version, /^commons-player-images-/);
+for (const [playerId, photo] of Object.entries(images.players)) {
+  assert.ok(scouting.players.some((player) => String(player.player_id) === playerId));
+  assert.match(photo.license, /^(CC BY|CC0|Public domain|PDM)/);
+  assert.match(photo.sourceUrl, /^https:\/\/commons\.wikimedia\.org\/wiki\/File:/);
+  assert.match(photo.src, /^\/players\/[\w.-]+$/);
+  await access(new URL(`../public${photo.src}`, import.meta.url));
+}
+
+console.log(`Verified ${valuation.version}, ${scouting.version}, ${match.version}, and ${Object.keys(images.players).length} licensed player images.`);

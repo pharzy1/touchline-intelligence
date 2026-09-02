@@ -46,6 +46,11 @@ test("renders separate product routes and the transfer builder", async () => {
   assert.equal(response.status, 200); assert.match(html, /Replace the role/); assert.match(html, /REFERENCE PLAYER/); assert.match(html, /REPLACEMENT SHORTLIST/);
 });
 
+test("renders the photo-credit ledger", async () => {
+  const response = await render("/photo-credits"); const html = await response.text();
+  assert.equal(response.status, 200); assert.match(html, /Player photo credits/); assert.match(html, /Wikimedia Commons source/); assert.match(html, /Fallback policy/);
+});
+
 test("serves a versioned trained-model prediction", async () => {
   const response = await requestWorker(new Request("http://localhost/api/predict", {
     method: "POST",
@@ -86,6 +91,8 @@ test("searches players and returns explained nearest profiles", async () => {
   assert.equal(searchResponse.status, 200);
   const search = await searchResponse.json();
   assert.equal(search.players[0].name, "Erling Haaland");
+  const riceResponse = await requestWorker(new Request("http://localhost/api/scouting?q=Declan%20Rice"));
+  const rice = await riceResponse.json(); assert.match(rice.players[0].photo.src, /^\/players\//); assert.match(rice.players[0].photo.license, /^CC BY/);
   const response = await requestWorker(new Request(`http://localhost/api/scouting?player_id=${search.players[0].player_id}&club=different&max_age=30&max_value_eur=75000000`));
   assert.equal(response.status, 200);
   const result = await response.json();

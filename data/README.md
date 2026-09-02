@@ -23,6 +23,13 @@ goal rates plus a sequential Elo rating. Seasons are kept in chronological
 order, with separate training, probability-calibration, and final test seasons.
 The exported team state powers hypothetical match comparisons in the app.
 
+`player-images.json` is produced by `pipeline/cache_player_images.py`. The job
+queries Wikimedia Commons during the data pipeline, accepts only explicit
+CC BY, CC BY-SA, CC0, or public-domain metadata, downloads a resized thumbnail
+to `public/players/`, and retains the author, licence, and source-page URL.
+Ambiguous names and uncertain matches intentionally receive initials avatars.
+No Commons request is made in the browser or on an application API request.
+
 Market values are estimates rather than transaction prices. The model is a
 portfolio demonstration and must not be used as financial or recruitment
 advice.

@@ -1,4 +1,5 @@
 import index from "../../../data/scouting-index.json";
+import imageManifest from "../../../data/player-images.json";
 import { z } from "zod";
 import { apiError, parse, rateLimit, recordEvent } from "../shared";
 
@@ -13,7 +14,8 @@ const labels: Record<string, string> = {
 
 function summary(player: Player) {
   const { vector: _vector, ...rest } = player;
-  return rest;
+  const photo = (imageManifest.players as Record<string, { src: string; author: string; license: string; licenseUrl: string; sourceUrl: string }>)[String(player.player_id)];
+  return { ...rest, photo: photo ?? null };
 }
 
 function distance(left: Player, right: Player) {
