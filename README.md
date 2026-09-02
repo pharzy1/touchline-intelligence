@@ -1,8 +1,8 @@
 # Touchline Intelligence
 
 [![CI](https://github.com/pharzy1/touchline-intelligence/actions/workflows/ci.yml/badge.svg)](https://github.com/pharzy1/touchline-intelligence/actions/workflows/ci.yml)
-![Integration tests](https://img.shields.io/badge/integration-12%20passing-18a558)
-![E2E flows](https://img.shields.io/badge/Playwright-6%20golden%20paths-2eAD33)
+![Integration tests](https://img.shields.io/badge/integration-13%20passing-18a558)
+![E2E flows](https://img.shields.io/badge/Playwright-7%20golden%20paths-2eAD33)
 
 An end-to-end Premier League analytics platform that turns historical football data into three recruiter-facing products: player valuation, similarity scouting, and calibrated match forecasting.
 
@@ -24,6 +24,7 @@ Most portfolio ML projects stop at a notebook. Touchline carries the work throug
 - **Licensed media pipeline** caches vetted Commons thumbnails, stores author/licence/source metadata, and falls back safely when identity is uncertain.
 - **Match lab** returns calibrated home/draw/away probabilities from sequential Elo and rolling five-match form.
 - **Live record** snapshots upcoming predictions before kickoff, grades them after full time, and publishes accuracy and Brier score over time.
+- **Player intelligence pages** apply the deployed model to four seasons of performance, benchmark estimates against position peers, and keep the latest recorded value explicitly separate from inferred history.
 
 ## Architecture
 
@@ -87,7 +88,7 @@ Open `http://localhost:3000`. The committed model artifacts make local inference
 pnpm check
 ```
 
-This validates model artifact contracts, creates a production build, and runs the rendered-HTML integration suite. `pnpm test:e2e` adds Playwright coverage for the valuation, scouting, transfer, match, live-performance, and production-status golden paths. GitHub Actions runs both suites on every push and pull request and retains Playwright reports and traces for diagnosis.
+This validates model artifact contracts, creates a production build, and runs the rendered-HTML integration suite. `pnpm test:e2e` adds Playwright coverage for valuation, scouting, transfers, player histories, matches, live performance, and production status. GitHub Actions runs both suites on every push and pull request and retains Playwright reports and traces for diagnosis.
 
 ### Retrain the models
 

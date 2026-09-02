@@ -2,11 +2,12 @@ import assert from "node:assert/strict";
 import { access, readFile } from "node:fs/promises";
 
 const load = async (name) => JSON.parse(await readFile(new URL(`../data/${name}`, import.meta.url), "utf8"));
-const [valuation, scouting, match, images] = await Promise.all([
+const [valuation, scouting, match, images, histories] = await Promise.all([
   load("valuation-model.json"),
   load("scouting-index.json"),
   load("match-model.json"),
   load("player-images.json"),
+  load("player-histories.json"),
 ]);
 
 assert.match(valuation.version, /^valuation-/);
@@ -39,4 +40,9 @@ for (const [playerId, photo] of Object.entries(images.players)) {
   await access(new URL(`../public${photo.src}`, import.meta.url));
 }
 
-console.log(`Verified ${valuation.version}, ${scouting.version}, ${match.version}, and ${Object.keys(images.players).length} licensed player images.`);
+assert.match(histories.version, /^player-history-/);
+assert.equal(histories.model_version, valuation.version);
+assert.equal(histories.players.length, scouting.players.length);
+assert.ok(histories.players.every((player) => player.points.length > 0 && player.points.every((point) => point.estimate_eur > 0 && point.peer_median_eur > 0)));
+
+console.log(`Verified ${valuation.version}, ${scouting.version}, ${match.version}, ${histories.version}, and ${Object.keys(images.players).length} licensed player images.`);

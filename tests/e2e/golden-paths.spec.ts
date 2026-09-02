@@ -45,3 +45,14 @@ test("production status exposes freshness and artifact versions", async ({ page 
   await expect(page.getByText("LAST SUCCESSFUL SYNC")).toBeVisible();
   await expect(page.getByText("Model versions")).toBeVisible();
 });
+
+test("player profile connects history to transfer decisions", async ({ page }) => {
+  await page.goto("/players/433177");
+  await expect(page.getByText("Bukayo Saka", { exact: true })).toBeVisible();
+  await expect(page.getByText("LATEST RECORDED VALUE")).toBeVisible();
+  await expect(page.getByText("Performance-priced")).toBeVisible();
+  await expect(page.getByRole("link", { name: /Build transfer scenario/ })).toHaveAttribute("href", "/transfers?player=433177");
+  await page.getByRole("link", { name: "Find similar profiles" }).click();
+  await expect(page).toHaveURL(/scouting\?player_id=433177/);
+  await expect(page.getByRole("heading", { name: "Bukayo Saka" })).toBeVisible();
+});

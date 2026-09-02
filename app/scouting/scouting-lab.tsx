@@ -22,6 +22,11 @@ export function ScoutingLab() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    const requested = Number(new URLSearchParams(window.location.search).get("player_id")); if (!requested) return;
+    fetch(`/api/scouting?player_id=${requested}`).then((response) => response.json()).then((data) => { if (data.selected) { setSelected(data.selected); setQuery(data.selected.name); } }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       try {
@@ -60,12 +65,12 @@ export function ScoutingLab() {
 
       <div className="scout-results-panel">
         <div className="result-top"><span>NEAREST PROFILES</span><span className="confidence"><i /> SAME-POSITION SEARCH</span></div>
-        {selected && <div className="reference-card"><PlayerAvatar name={selected.name} position={selected.position} photo={selected.photo} size="large" /><div><span>REFERENCE</span><h2>{selected.name}</h2><p>{selected.club} · {positionLabel(selected.position)} · Age {selected.age}</p></div><strong>{money(selected.market_value_eur)}</strong></div>}
+        {selected && <div className="reference-card"><PlayerAvatar name={selected.name} position={selected.position} photo={selected.photo} size="large" /><div><span>REFERENCE</span><h2><a href={`/players/${selected.player_id}`}>{selected.name}</a></h2><p>{selected.club} · {positionLabel(selected.position)} · Age {selected.age}</p></div><strong>{money(selected.market_value_eur)}</strong></div>}
         <div className={`matches-list ${loading ? "loading" : ""}`} aria-live="polite">
           {error && <p className="empty-state">{error}</p>}
           {!error && !loading && matches.length === 0 && <p className="empty-state">No profiles meet these constraints. Widen the age, value, or club filter.</p>}
           {matches.map((player, index) => <article className="match-card" key={player.player_id}>
-            <span className="match-rank">0{index + 1}</span><PlayerAvatar name={player.name} position={player.position} photo={player.photo} /><div className="match-person"><h3>{player.name}</h3><p>{player.club} · Age {player.age}</p><div>{player.shared_signals.map((signal) => <span key={signal}>{signal}</span>)}</div></div>
+            <span className="match-rank">0{index + 1}</span><PlayerAvatar name={player.name} position={player.position} photo={player.photo} /><div className="match-person"><h3><a href={`/players/${player.player_id}`}>{player.name}</a></h3><p>{player.club} · Age {player.age}</p><div>{player.shared_signals.map((signal) => <span key={signal}>{signal}</span>)}</div></div>
             <div className="match-stats"><span><small>G / 90</small><strong>{player.goals_per_90.toFixed(2)}</strong></span><span><small>A / 90</small><strong>{player.assists_per_90.toFixed(2)}</strong></span><span><small>VALUE</small><strong>{money(player.market_value_eur)}</strong></span></div>
             <div className="match-score"><strong>{player.similarity}%</strong><span>profile match</span></div>
           </article>)}

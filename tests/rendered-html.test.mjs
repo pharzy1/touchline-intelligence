@@ -58,6 +58,11 @@ test("renders public production health and safe status data", async () => {
   assert.equal(api.status, 200); assert.ok(["initializing", "operational", "delayed", "degraded", "stale"].includes(data.state)); assert.equal(data.models.matches, "match-softmax-2025-v1"); assert.equal(data.errorMessage, undefined);
 });
 
+test("renders shareable player history with honest valuation methodology", async () => {
+  const response = await render("/players/433177"); const html = await response.text();
+  assert.equal(response.status, 200); assert.match(html, /Bukayo Saka/); assert.match(html, /VALUE TRAJECTORY/); assert.match(html, /LATEST RECORDED VALUE/); assert.match(html, /No invented prices/);
+});
+
 test("serves a versioned trained-model prediction", async () => {
   const response = await requestWorker(new Request("http://localhost/api/predict", {
     method: "POST",
