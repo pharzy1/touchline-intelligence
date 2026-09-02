@@ -55,7 +55,7 @@ The response also reports the four largest model factors and which side each fac
 
 ## Production status
 
-`GET /api/status` returns the public operational state, last successful fixture sync, expected next sync, fixture-ledger counts, recent safe run summaries, and deployed model artifact versions. Provider error details are intentionally excluded from this response.
+`GET /api/status` returns the public operational state, last successful fixture sync, expected next sync, fixture-ledger counts, recent safe run summaries, and deployed model artifact versions. It also exposes privacy-safe aggregate telemetry: seven-day request/error counts, median and p95 latency, daily traffic, usage by product route, 30-day sync reliability, and durable database record counts. Raw request data, client identifiers, and provider error details are intentionally excluded.
 
 `GET /api/internal/diagnostics` returns deeper sync and API-error diagnostics and requires the same bearer secret as the manual fixture-sync endpoint.
 ### `GET /api/performance`

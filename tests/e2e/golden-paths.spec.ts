@@ -43,6 +43,9 @@ test("production status exposes freshness and artifact versions", async ({ page 
   await page.goto("/status");
   await expect(page.getByText("Trust the system.")).toBeVisible();
   await expect(page.getByText("LAST SUCCESSFUL SYNC")).toBeVisible();
+  await expect(page.getByText("7-DAY REQUESTS")).toBeVisible();
+  await expect(page.getByText("Seven-day request volume")).toBeVisible();
+  await expect(page.getByText("Database footprint")).toBeVisible();
   await expect(page.getByText("Model versions")).toBeVisible();
 });
 
