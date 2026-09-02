@@ -74,9 +74,23 @@ async function syncFixtures(env: Env) {
     }
   }
   for (let index = 0; index < statements.length; index += 75) await env.DB.batch(statements.slice(index, index + 75));
-  const summary = { createdCandidates: created, gradedCandidates: graded, skipped, statements: statements.length, at: nowIso };
+  const summary = { fixturesFetched: fixtures.length, createdCandidates: created, gradedCandidates: graded, skipped, statements: statements.length, at: nowIso };
   console.log(JSON.stringify({ event: "fixture_sync", ...summary }));
   return summary;
+}
+
+async function runFixtureSync(env: Env, trigger: "cron" | "manual") {
+  const startedAt = new Date().toISOString(); const started = Date.now();
+  try {
+    const summary = await syncFixtures(env); const completedAt = new Date().toISOString(); const durationMs = Date.now() - started;
+    await env.DB.prepare("INSERT INTO sync_runs (source, trigger, status, started_at, completed_at, fixtures_fetched, created_candidates, graded_candidates, skipped, statements, duration_ms, error_message) VALUES (?, ?, 'success', ?, ?, ?, ?, ?, ?, ?, ?, NULL)").bind("Fantasy Premier League", trigger, startedAt, completedAt, summary.fixturesFetched, summary.createdCandidates, summary.gradedCandidates, summary.skipped, summary.statements, durationMs).run();
+    return { ...summary, trigger, durationMs };
+  } catch (error) {
+    const completedAt = new Date().toISOString(); const durationMs = Date.now() - started; const message = (error instanceof Error ? error.message : "Unknown sync failure").replace(/[\r\n]+/g, " ").slice(0, 240);
+    try { await env.DB.prepare("INSERT INTO sync_runs (source, trigger, status, started_at, completed_at, fixtures_fetched, created_candidates, graded_candidates, skipped, statements, duration_ms, error_message) VALUES (?, ?, 'failed', ?, ?, 0, 0, 0, 0, 0, ?, ?)").bind("Fantasy Premier League", trigger, startedAt, completedAt, durationMs, message).run(); } catch { /* Preserve the original provider failure. */ }
+    console.error(JSON.stringify({ event: "fixture_sync_failed", trigger, message, durationMs }));
+    throw error;
+  }
 }
 
 // Image security config. SVG sources with .svg extension auto-skip the
@@ -91,8 +105,18 @@ const worker = {
 
     if (url.pathname === "/api/internal/fixture-sync" && request.method === "POST") {
       if (!env.SYNC_SECRET || request.headers.get("authorization") !== `Bearer ${env.SYNC_SECRET}`) return Response.json({ error: "Unauthorized" }, { status: 401 });
-      try { return Response.json({ ok: true, ...(await syncFixtures(env)) }); }
-      catch (error) { console.error(JSON.stringify({ event: "fixture_sync_failed", message: error instanceof Error ? error.message : "unknown" })); return Response.json({ error: "Fixture sync failed" }, { status: 502 }); }
+      try { return Response.json({ ok: true, ...(await runFixtureSync(env, "manual")) }); }
+      catch { return Response.json({ error: "Fixture sync failed" }, { status: 502 }); }
+    }
+
+    if (url.pathname === "/api/internal/diagnostics" && request.method === "GET") {
+      if (!env.SYNC_SECRET || request.headers.get("authorization") !== `Bearer ${env.SYNC_SECRET}`) return Response.json({ error: "Unauthorized" }, { status: 401 });
+      const [runs, errors, fixtures] = await Promise.all([
+        env.DB.prepare("SELECT id, source, trigger, status, started_at, completed_at, fixtures_fetched, created_candidates, graded_candidates, skipped, statements, duration_ms, error_message FROM sync_runs ORDER BY completed_at DESC LIMIT 20").all(),
+        env.DB.prepare("SELECT route, status, COUNT(*) AS requests, ROUND(AVG(latency_ms), 1) AS average_latency_ms FROM api_events WHERE status >= 400 AND created_at >= datetime('now', '-24 hours') GROUP BY route, status ORDER BY requests DESC").all(),
+        env.DB.prepare("SELECT status, COUNT(*) AS count, MAX(source_updated_at) AS latest_source_update FROM fixture_predictions GROUP BY status").all(),
+      ]);
+      return Response.json({ generatedAt: new Date().toISOString(), syncRuns: runs.results, recentApiErrors: errors.results, fixtures: fixtures.results });
     }
 
     if (url.pathname === "/_vinext/image") {
@@ -109,7 +133,7 @@ const worker = {
     return handler.fetch(request, env, ctx);
   },
   async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext) {
-    ctx.waitUntil(syncFixtures(env));
+    ctx.waitUntil(runFixtureSync(env, "cron"));
   },
 };
 

@@ -38,3 +38,10 @@ test("live record explains immutable pre-match grading", async ({ page }) => {
   await expect(page.getByText("locked predictions", { exact: true })).toBeVisible();
   await expect(page.getByText(/before kickoff|scheduled fixture sync/i).first()).toBeVisible();
 });
+
+test("production status exposes freshness and artifact versions", async ({ page }) => {
+  await page.goto("/status");
+  await expect(page.getByText("Trust the system.")).toBeVisible();
+  await expect(page.getByText("LAST SUCCESSFUL SYNC")).toBeVisible();
+  await expect(page.getByText("Model versions")).toBeVisible();
+});

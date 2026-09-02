@@ -1,7 +1,7 @@
 # Touchline Intelligence
 
 [![CI](https://github.com/pharzy1/touchline-intelligence/actions/workflows/ci.yml/badge.svg)](https://github.com/pharzy1/touchline-intelligence/actions/workflows/ci.yml)
-![Integration tests](https://img.shields.io/badge/integration-11%20passing-18a558)
+![Integration tests](https://img.shields.io/badge/integration-12%20passing-18a558)
 ![E2E flows](https://img.shields.io/badge/Playwright-5%20golden%20paths-2eAD33)
 
 An end-to-end Premier League analytics platform that turns historical football data into three recruiter-facing products: player valuation, similarity scouting, and calibrated match forecasting.
@@ -41,7 +41,7 @@ The deployed app performs inference from compact, immutable JSON artifacts. It d
 
 ## Engineering decisions
 
-Training, calibration, and test data are split **chronologically** for match forecasting so future results cannot leak into earlier predictions. Training emits versioned JSON artifacts with explicit schemas, keeping model training separate from low-latency serving; `pnpm verify:artifacts` rejects malformed or incompatible artifacts before deployment. Edge routes on Cloudflare Workers were chosen over a permanently running server because inference is small, deterministic, and globally cache-adjacent. Every public route uses Zod validation and typed errors, emits structured latency logs, persists anonymous request telemetry to D1 when available, and applies a fail-open per-isolate rate limit. `pnpm check` validates artifacts, creates a production build, and runs the nine integration tests before CI can deploy.
+Training, calibration, and test data are split **chronologically** for match forecasting so future results cannot leak into earlier predictions. Training emits versioned JSON artifacts with explicit schemas, keeping model training separate from low-latency serving; `pnpm verify:artifacts` rejects malformed or incompatible artifacts before deployment. Edge routes on Cloudflare Workers were chosen over a permanently running server because inference is small, deterministic, and globally cache-adjacent. Every public route uses Zod validation and typed errors, emits structured latency logs, persists anonymous request telemetry to D1 when available, and applies a fail-open per-isolate rate limit. Scheduled fixture syncs persist success/failure telemetry to D1, power a public `/status` freshness dashboard, and retain detailed provider errors only behind a protected diagnostics route. `pnpm check` validates artifacts, creates a production build, and runs the twelve integration tests before CI can deploy.
 
 ## Model results
 

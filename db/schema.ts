@@ -66,3 +66,22 @@ export const fixturePredictions = sqliteTable("fixture_predictions", {
   index("idx_fixture_predictions_kickoff").on(table.kickoffAt),
   index("idx_fixture_predictions_status_kickoff").on(table.status, table.kickoffAt),
 ]);
+
+export const syncRuns = sqliteTable("sync_runs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  source: text("source").notNull(),
+  trigger: text("trigger").notNull(),
+  status: text("status").notNull(),
+  startedAt: text("started_at").notNull(),
+  completedAt: text("completed_at").notNull(),
+  fixturesFetched: integer("fixtures_fetched").notNull(),
+  createdCandidates: integer("created_candidates").notNull(),
+  gradedCandidates: integer("graded_candidates").notNull(),
+  skipped: integer("skipped").notNull(),
+  statements: integer("statements").notNull(),
+  durationMs: integer("duration_ms").notNull(),
+  errorMessage: text("error_message"),
+}, (table) => [
+  index("idx_sync_runs_completed").on(table.completedAt),
+  index("idx_sync_runs_status_completed").on(table.status, table.completedAt),
+]);

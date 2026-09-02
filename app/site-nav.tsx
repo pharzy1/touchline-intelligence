@@ -1,4 +1,4 @@
-type Page = "home" | "valuation" | "scouting" | "transfers" | "matches";
+type Page = "home" | "valuation" | "scouting" | "transfers" | "matches" | "status";
 
 export function SiteNav({ active }: { active: Page }) {
   return <nav className="nav shell" aria-label="Primary navigation">
@@ -9,6 +9,6 @@ export function SiteNav({ active }: { active: Page }) {
       <a className={active === "transfers" ? "active" : ""} href="/transfers">Transfers</a>
       <a className={active === "matches" ? "active" : ""} href="/matches">Matches</a>
     </div>
-    <a className="github-link" href="https://github.com/pharzy1/touchline-intelligence">GitHub ↗</a>
+    <div className="nav-utility"><a className={active === "status" ? "status-link active" : "status-link"} href="/status"><i /> Status</a><a className="github-link" href="https://github.com/pharzy1/touchline-intelligence">GitHub ↗</a></div>
   </nav>;
 }
