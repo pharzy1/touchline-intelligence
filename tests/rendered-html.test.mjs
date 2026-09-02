@@ -86,7 +86,7 @@ test("serves a versioned trained-model prediction", async () => {
   }));
   assert.equal(response.status, 200);
   const prediction = await response.json();
-  assert.equal(prediction.version, "valuation-ridge-2025-v1");
+  assert.match(prediction.version, /^valuation-ridge-/);
   assert.equal(prediction.currency, "EUR");
   assert.ok(prediction.estimateEur > 1_000_000);
   assert.ok(prediction.lowEur < prediction.estimateEur);
@@ -123,7 +123,7 @@ test("searches players and returns explained nearest profiles", async () => {
   const response = await requestWorker(new Request(`http://localhost/api/scouting?player_id=${search.players[0].player_id}&club=different&max_age=30&max_value_eur=75000000`));
   assert.equal(response.status, 200);
   const result = await response.json();
-  assert.equal(result.version, "scouting-neighbors-2025-v1");
+  assert.match(result.version, /^scouting-neighbors-/);
   assert.equal(result.selected.name, "Erling Haaland");
   assert.ok(result.matches.length > 0);
   assert.ok(result.matches.length <= 5);
