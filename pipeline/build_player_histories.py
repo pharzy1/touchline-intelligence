@@ -7,13 +7,14 @@ The artifact keeps the latest recorded value separate from that trajectory.
 """
 from __future__ import annotations
 
-import csv, gzip, json, math
+import csv, gzip, json, math, os
 from collections import defaultdict
 from datetime import date, datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE, DATA = ROOT / "work" / "source-data", ROOT / "data"
+SOURCE = Path(os.environ.get("TOUCHLINE_SOURCE_DIR", ROOT / "work" / "source-data"))
+DATA = Path(os.environ.get("TOUCHLINE_DATA_DIR", ROOT / "data"))
 SEASONS = [2022, 2023, 2024, 2025]
 
 def rows(name):
@@ -101,7 +102,7 @@ def main():
             previous = point
         for point in history["points"]: del point["contributions"]
 
-    artifact = {"version": "player-history-2025-v1", "created_at": datetime.now(timezone.utc).isoformat(), "model_version": model["version"], "seasons": SEASONS, "methodology": "Season-level performance is passed through the deployed valuation model. Only the latest recorded market value is available in the source snapshot.", "players": histories}
+    artifact = {"version": f"player-history-{model['version']}", "created_at": datetime.now(timezone.utc).isoformat(), "model_version": model["version"], "seasons": SEASONS, "methodology": "Season-level performance is passed through the deployed valuation model. Only the latest recorded market value is available in the source snapshot.", "players": histories}
     (DATA / "player-histories.json").write_text(json.dumps(artifact, ensure_ascii=False, indent=2) + "\n")
     print(f"Built {len(histories)} player histories with {sum(len(row['points']) for row in histories)} season points")
 

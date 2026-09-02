@@ -1,0 +1,80 @@
+name: Governed model refresh
+
+on:
+  schedule:
+    - cron: "31 8 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: governed-model-refresh
+  cancel-in-progress: false
+
+jobs:
+  evaluate:
+    name: Refresh, train, evaluate, and propose
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+      - name: Install deterministic training environment
+        run: pip install --requirement pipeline/requirements.txt
+      - name: Fetch the weekly CC0 source snapshot
+        run: |
+          mkdir -p work/source-data work/candidate
+          for table in players games appearances; do
+            curl --fail --retry 3 --retry-all-errors --silent --show-error \
+              "https://pub-e682421888d945d684bcae8890b0ec20.r2.dev/data/${table}.csv.gz" \
+              --output "work/source-data/${table}.csv.gz"
+          done
+      - name: Train ridge and boosted candidates
+        env:
+          TOUCHLINE_SOURCE_DIR: work/source-data
+          TOUCHLINE_OUTPUT_DIR: work/candidate
+          TOUCHLINE_MODEL_VERSION: valuation-ridge-auto-${{ github.run_id }}
+        run: python pipeline/train_model.py
+      - name: Build candidate player histories
+        env:
+          TOUCHLINE_SOURCE_DIR: work/source-data
+          TOUCHLINE_DATA_DIR: work/candidate
+        run: python pipeline/build_player_histories.py
+      - name: Apply promotion gates and drift checks
+        run: python pipeline/govern_model.py --candidate-dir work/candidate --report data/model-report.json --promote
+      - name: Validate the promoted artifact family
+        run: node scripts/verify-artifacts.mjs
+      - name: Open a reviewable promotion pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet -- data; then
+            echo "No promotable artifact change."
+            exit 0
+          fi
+          branch="model-refresh-${GITHUB_RUN_ID}"
+          git config user.name "touchline-model-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add data
+          git commit -m "Propose governed model refresh"
+          git push origin "$branch"
+          gh pr create --base main --head "$branch" \
+            --title "Governed model refresh" \
+            --body "Automated candidate passed artifact, coverage, holdout, cross-validation, drift, and interpretability gates. Review the model report before merging; production remains unchanged until merge and deployment."
+      - name: Retain evaluation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-evaluation-${{ github.run_id }}
+          path: |
+            data/model-report.json
+            work/candidate/valuation-model.json
+          if-no-files-found: warn
+          retention-days: 30

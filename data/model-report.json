@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-02T20:26:45.140865+00:00",
+  "productionVersion": "valuation-ridge-2025-v1",
+  "candidateVersion": "valuation-ridge-2025-v1",
+  "decision": "passed_no_change",
+  "promotionMode": "threshold-gated pull request",
+  "rollbackVersion": null,
+  "gates": [
+    {
+      "name": "Artifact contract",
+      "passed": true,
+      "detail": "Serving feature order, player index, and history model reference agree."
+    },
+    {
+      "name": "Dataset coverage",
+      "passed": true,
+      "detail": "414 candidate records vs 414 production."
+    },
+    {
+      "name": "Holdout quality",
+      "passed": true,
+      "detail": "R\u00b2 may fall at most 0.02 and MAE may rise at most 10%."
+    },
+    {
+      "name": "Cross-validation stability",
+      "passed": true,
+      "detail": "Mean quality and fold variance must remain stable."
+    },
+    {
+      "name": "Population drift",
+      "passed": true,
+      "detail": "No standardized feature mean may move more than 1.0\u03c3."
+    },
+    {
+      "name": "Prediction drift",
+      "passed": true,
+      "detail": "Median log-value output may move at most 0.75\u03c3 on the candidate population."
+    },
+    {
+      "name": "Interpretable serving model",
+      "passed": true,
+      "detail": "Ridge stays production-serving for coefficient-level explanations."
+    }
+  ],
+  "drift": {
+    "method": "standardized mean and prediction-distribution shift",
+    "maximumShift": 0.0,
+    "predictionShift": 0.0,
+    "features": {
+      "age": 0.0,
+      "appearances": 0.0,
+      "goals_per_90": 0.0,
+      "assists_per_90": 0.0,
+      "minutes_per_appearance": 0.0,
+      "international_caps": 0.0
+    }
+  },
+  "metrics": {
+    "production": {
+      "r2": 0.6135,
+      "maeEur": 9905783,
+      "cvR2Mean": 0.4002,
+      "cvR2Std": 0.2863,
+      "records": 414
+    },
+    "candidate": {
+      "r2": 0.6135,
+      "maeEur": 9905783,
+      "cvR2Mean": 0.4002,
+      "cvR2Std": 0.2863,
+      "records": 414,
+      "ridge": {
+        "r2": 0.6135,
+        "mae_eur": 9905783
+      },
+      "gradientBoostedTrees": {
+        "r2": 0.55,
+        "mae_eur": 10541485
+      }
+    }
+  },
+  "history": [
+    {
+      "version": "valuation-ridge-2025-v1",
+      "evaluatedAt": "2026-09-02T20:26:45.140865+00:00",
+      "decision": "passed_no_change",
+      "r2": 0.6135,
+      "maeEur": 9905783,
+      "records": 414
+    }
+  ]
+}

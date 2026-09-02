@@ -13,6 +13,7 @@ import csv
 import gzip
 import json
 import math
+import os
 from collections import defaultdict
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -21,10 +22,10 @@ import numpy as np
 from sklearn.ensemble import GradientBoostingRegressor
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / "work" / "source-data"
-OUT = ROOT / "data"
+SOURCE = Path(os.environ.get("TOUCHLINE_SOURCE_DIR", ROOT / "work" / "source-data"))
+OUT = Path(os.environ.get("TOUCHLINE_OUTPUT_DIR", ROOT / "data"))
 COMPETITION = "GB1"
-MODEL_VERSION = "valuation-ridge-2025-v1"
+MODEL_VERSION = os.environ.get("TOUCHLINE_MODEL_VERSION", "valuation-ridge-2025-v1")
 FEATURES = [
     "age", "appearances", "goals", "assists", "minutes",
     "goals_per_90", "assists_per_90", "international_caps",
@@ -230,7 +231,7 @@ def main() -> None:
     scouting_scale = scouting_matrix.std(axis=0)
     scouting_scale[scouting_scale == 0] = 1
     scouting = {
-        "version": "scouting-neighbors-2025-v1",
+        "version": f"scouting-neighbors-{MODEL_VERSION}",
         "created_at": artifact["trained_at"],
         "season": latest_season,
         "features": SCOUT_FEATURES,

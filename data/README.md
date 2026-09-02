@@ -17,6 +17,14 @@ international experience. The API compares players only within the same broad
 position using Euclidean distance and returns the nearest profiles with an
 explanation of their strongest shared signals.
 
+`model-report.json` is the public governance ledger consumed by `/models`.
+The scheduled lifecycle workflow evaluates a newly versioned candidate against
+the deployed artifact family and blocks promotion on schema mismatch, material
+dataset loss, holdout or cross-validation regression, feature-population drift,
+prediction-distribution drift, or loss of the interpretable serving contract.
+Passing candidates are copied into a dedicated pull request; production changes
+only after review and merge, leaving the previous Git revision as the rollback.
+
 `match-model.json` is produced by `pipeline/train_match_model.py`. Each example
 uses only information available before kickoff: rolling five-match form and
 goal rates plus a sequential Elo rating. Seasons are kept in chronological

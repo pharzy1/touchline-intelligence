@@ -57,6 +57,14 @@ test("production status exposes freshness and artifact versions", async ({ page 
   await expect(page.getByText("Model versions")).toBeVisible();
 });
 
+test("model registry exposes challenger evidence and promotion gates", async ({ page }) => {
+  await page.goto("/models");
+  await expect(page.getByText("Production model governed")).toBeVisible();
+  await expect(page.getByText("Ridge regression")).toBeVisible();
+  await expect(page.getByText("Every gate must pass.")).toBeVisible();
+  await expect(page.getByText("Prediction drift", { exact: true }).first()).toBeVisible();
+});
+
 test("player profile connects history to transfer decisions", async ({ page }) => {
   await page.goto("/players/433177");
   await expect(page.getByText("Bukayo Saka", { exact: true })).toBeVisible();

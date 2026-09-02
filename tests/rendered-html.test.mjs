@@ -63,6 +63,11 @@ test("renders public production health and safe status data", async () => {
   assert.equal(api.status, 200); assert.ok(["initializing", "operational", "delayed", "degraded", "stale"].includes(data.state)); assert.equal(data.models.matches, "match-softmax-2025-v1"); assert.equal(typeof data.telemetry.requests, "number"); assert.equal(typeof data.telemetry.p95LatencyMs, "number"); assert.ok(Array.isArray(data.telemetry.routes)); assert.equal(data.errorMessage, undefined);
 });
 
+test("renders the governed model registry and promotion evidence", async () => {
+  const response = await render("/models"); const html = await response.text();
+  assert.equal(response.status, 200); assert.match(html, /Model Registry — Touchline/); assert.match(html, /Promote with evidence/); assert.match(html, /Every gate must pass/); assert.match(html, /Ridge regression/); assert.match(html, /Prediction drift/);
+});
+
 test("rejects unauthenticated production fixture syncs", async () => {
   const response = await requestWorker(new Request("http://localhost/api/internal/fixture-sync", { method: "POST" }));
   assert.equal(response.status, 401); assert.deepEqual(await response.json(), { error: "Unauthorized" });

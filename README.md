@@ -1,8 +1,8 @@
 # Touchline Intelligence
 
 [![CI](https://github.com/pharzy1/touchline-intelligence/actions/workflows/ci.yml/badge.svg)](https://github.com/pharzy1/touchline-intelligence/actions/workflows/ci.yml)
-![Integration tests](https://img.shields.io/badge/integration-13%20passing-18a558)
-![E2E flows](https://img.shields.io/badge/Playwright-7%20golden%20paths-2eAD33)
+![Integration tests](https://img.shields.io/badge/integration-16%20passing-18a558)
+![E2E flows](https://img.shields.io/badge/Playwright-9%20golden%20paths-2eAD33)
 
 An end-to-end Premier League analytics platform that turns historical football data into three recruiter-facing products: player valuation, similarity scouting, and calibrated match forecasting.
 
@@ -25,6 +25,7 @@ Most portfolio ML projects stop at a notebook. Touchline carries the work throug
 - **Match lab** returns calibrated home/draw/away probabilities from sequential Elo and rolling five-match form.
 - **Live record** snapshots upcoming predictions before kickoff, grades them after full time, and publishes accuracy and Brier score over time.
 - **Player intelligence pages** apply the deployed model to four seasons of performance, benchmark estimates against position peers, and keep the latest recorded value explicitly separate from inferred history.
+- **Model registry** publishes challenger metrics, promotion gates, feature and prediction drift, evaluation history, and the rollback contract behind every artifact change.
 
 ## Architecture
 
@@ -42,7 +43,7 @@ The deployed app performs inference from compact, immutable JSON artifacts. It d
 
 ## Engineering decisions
 
-Training, calibration, and test data are split **chronologically** for match forecasting so future results cannot leak into earlier predictions. Training emits versioned JSON artifacts with explicit schemas, keeping model training separate from low-latency serving; `pnpm verify:artifacts` rejects malformed or incompatible artifacts before deployment. Edge routes on Cloudflare Workers were chosen over a permanently running server because inference is small, deterministic, and globally cache-adjacent. Every public route uses Zod validation and typed errors, emits structured latency logs, persists anonymous request telemetry to D1 when available, and applies a fail-open per-isolate rate limit. Scheduled fixture syncs persist success/failure telemetry to D1, power a public `/status` freshness dashboard, and retain detailed provider errors only behind a protected diagnostics route. A redundant GitHub Actions scheduler authenticates with a short-lived, claim-verified OIDC token instead of a duplicated production secret. `pnpm check` validates artifacts, creates a production build, and runs the fifteen integration tests before CI can deploy.
+Training, calibration, and test data are split **chronologically** for match forecasting so future results cannot leak into earlier predictions. Training emits versioned JSON artifacts with explicit schemas, keeping model training separate from low-latency serving; `pnpm verify:artifacts` rejects malformed or incompatible artifacts before deployment. A weekly lifecycle job fetches the upstream CC0 snapshot, retrains ridge and gradient-boosted candidates, checks holdout/CV quality, coverage, artifact compatibility, feature drift, and prediction drift, then opens a reviewable artifact pull request only when every gate passes. Edge routes on Cloudflare Workers were chosen over a permanently running server because inference is small, deterministic, and globally cache-adjacent. Every public route uses Zod validation and typed errors, emits structured latency logs, persists anonymous request telemetry to D1 when available, and applies a fail-open per-isolate rate limit. Scheduled fixture syncs persist success/failure telemetry to D1, power a public `/status` freshness dashboard, and retain detailed provider errors only behind a protected diagnostics route. A redundant GitHub Actions scheduler authenticates with a short-lived, claim-verified OIDC token instead of a duplicated production secret. `pnpm check` validates artifacts, creates a production build, and runs the sixteen integration tests before CI can deploy.
 
 ## Model results
 
@@ -88,7 +89,7 @@ Open `http://localhost:3000`. The committed model artifacts make local inference
 pnpm check
 ```
 
-This validates model artifact contracts, creates a production build, and runs the rendered-HTML integration suite. `pnpm test:e2e` adds Playwright coverage for valuation, scouting, transfers, player histories, matches, live performance, and production status. GitHub Actions runs both suites on every push and pull request and retains Playwright reports and traces for diagnosis.
+This validates model artifact contracts, creates a production build, and runs the rendered-HTML integration suite. `pnpm test:e2e` adds Playwright coverage for valuation, scouting, transfers, player histories, matches, live performance, production status, and the model registry. GitHub Actions runs both suites on every push and pull request and retains Playwright reports and traces for diagnosis.
 
 ### Retrain the models
 
@@ -135,7 +136,8 @@ docs/       architecture, API, and portfolio material
 - Shareable valuation URLs, explicit match baselines, and D1 request instrumentation
 - Six-hour fixture sync, immutable pre-kickoff predictions, post-match grading, and a public accountability curve
 - Pipeline-time Wikimedia Commons enrichment with local caching, artifact validation, attribution UI, and position-based fallback avatars
-- Zod validation, typed API errors, structured logs, rate limiting, error recovery, and five Playwright E2E flows
+- Zod validation, typed API errors, structured logs, rate limiting, error recovery, and nine Playwright E2E flows
+- Weekly governed retraining with challenger comparison, feature/prediction drift gates, pull-request promotion, and Git-backed rollback
 
 ## Roadmap
 
