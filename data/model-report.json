@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-02T20:26:45.140865+00:00",
-  "productionVersion": "valuation-ridge-2025-v1",
-  "candidateVersion": "valuation-ridge-2025-v1",
-  "decision": "passed_no_change",
+  "generatedAt": "2026-09-02T20:54:16.704943+00:00",
+  "productionVersion": "valuation-ridge-auto-33681984060",
+  "candidateVersion": "valuation-ridge-auto-33681984060",
+  "decision": "promoted",
   "promotionMode": "threshold-gated pull request",
-  "rollbackVersion": null,
+  "rollbackVersion": "valuation-ridge-2025-v1",
   "gates": [
     {
       "name": "Artifact contract",
@@ -81,6 +81,14 @@
     }
   },
   "history": [
+    {
+      "version": "valuation-ridge-auto-33681984060",
+      "evaluatedAt": "2026-09-02T20:54:16.704943+00:00",
+      "decision": "promoted",
+      "r2": 0.6135,
+      "maeEur": 9905783,
+      "records": 414
+    },
     {
       "version": "valuation-ridge-2025-v1",
       "evaluatedAt": "2026-09-02T20:26:45.140865+00:00",
