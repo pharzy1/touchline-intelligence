@@ -26,6 +26,36 @@ interface ScheduledController { scheduledTime: number; cron: string; }
 type ModelTeam = (typeof matchModel.teams)[number];
 type FplFixture = { id: number; event: number | null; kickoff_time: string | null; team_h: number; team_a: number; team_h_score: number | null; team_a_score: number | null; finished: boolean; started: boolean };
 type FplTeam = { id: number; name: string };
+type GithubOidcClaims = { aud?: string | string[]; exp?: number; iss?: string; nbf?: number; repository?: string; ref?: string; workflow_ref?: string; event_name?: string; runner_environment?: string };
+
+const GITHUB_OIDC_ISSUER = "https://token.actions.githubusercontent.com";
+const GITHUB_OIDC_AUDIENCE = "touchlineintelligence.com";
+const GITHUB_REPOSITORY = "pharzy1/touchline-intelligence";
+const GITHUB_WORKFLOW_REF = `${GITHUB_REPOSITORY}/.github/workflows/fixture-sync.yml@refs/heads/main`;
+
+function decodeBase64Url(value: string) {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(value.length / 4) * 4, "=");
+  return Uint8Array.from(atob(normalized), (character) => character.charCodeAt(0));
+}
+
+async function verifyGithubOidc(token: string) {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return false;
+    const header = JSON.parse(new TextDecoder().decode(decodeBase64Url(parts[0]))) as { alg?: string; kid?: string };
+    const claims = JSON.parse(new TextDecoder().decode(decodeBase64Url(parts[1]))) as GithubOidcClaims;
+    if (header.alg !== "RS256" || !header.kid) return false;
+    const response = await fetch(`${GITHUB_OIDC_ISSUER}/.well-known/jwks`);
+    if (!response.ok) return false;
+    const { keys } = await response.json() as { keys: Array<JsonWebKey & { kid?: string }> };
+    const jwk = keys.find((candidate) => candidate.kid === header.kid);
+    if (!jwk) return false;
+    const key = await crypto.subtle.importKey("jwk", jwk, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"]);
+    const validSignature = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", key, decodeBase64Url(parts[2]), new TextEncoder().encode(`${parts[0]}.${parts[1]}`));
+    const now = Math.floor(Date.now() / 1000); const audiences = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
+    return validSignature && claims.iss === GITHUB_OIDC_ISSUER && audiences.includes(GITHUB_OIDC_AUDIENCE) && Boolean(claims.exp && claims.exp > now) && (!claims.nbf || claims.nbf <= now) && claims.repository === GITHUB_REPOSITORY && claims.ref === "refs/heads/main" && claims.workflow_ref === GITHUB_WORKFLOW_REF && claims.runner_environment === "github-hosted" && ["schedule", "workflow_dispatch"].includes(claims.event_name ?? "");
+  } catch { return false; }
+}
 
 const aliases: Record<string, string> = {
   "bournemouth": "AFC Bournemouth", "arsenal": "Arsenal FC", "aston villa": "Aston Villa", "brentford": "Brentford FC", "brighton": "Brighton & Hove Albion",
@@ -79,7 +109,7 @@ async function syncFixtures(env: Env) {
   return summary;
 }
 
-async function runFixtureSync(env: Env, trigger: "cron" | "manual") {
+async function runFixtureSync(env: Env, trigger: "cron" | "scheduler" | "manual") {
   const startedAt = new Date().toISOString(); const started = Date.now();
   try {
     const summary = await syncFixtures(env); const completedAt = new Date().toISOString(); const durationMs = Date.now() - started;
@@ -104,8 +134,11 @@ const worker = {
     const url = new URL(request.url);
 
     if (url.pathname === "/api/internal/fixture-sync" && request.method === "POST") {
-      if (!env.SYNC_SECRET || request.headers.get("authorization") !== `Bearer ${env.SYNC_SECRET}`) return Response.json({ error: "Unauthorized" }, { status: 401 });
-      try { return Response.json({ ok: true, ...(await runFixtureSync(env, "manual")) }); }
+      const authorization = request.headers.get("authorization") ?? ""; const bearer = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
+      const secretAuthorized = Boolean(env.SYNC_SECRET && bearer === env.SYNC_SECRET); const oidcAuthorized = bearer ? await verifyGithubOidc(bearer) : false;
+      if (!secretAuthorized && !oidcAuthorized) return Response.json({ error: "Unauthorized" }, { status: 401 });
+      const trigger = oidcAuthorized ? "scheduler" : "manual";
+      try { return Response.json({ ok: true, ...(await runFixtureSync(env, trigger)) }); }
       catch { return Response.json({ error: "Fixture sync failed" }, { status: 502 }); }
     }
 

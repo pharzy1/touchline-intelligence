@@ -1,0 +1,33 @@
+name: Production fixture sync
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: production-fixture-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Fetch, predict, and grade fixtures
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger the protected production sync
+        run: |
+          OIDC_TOKEN="$(curl --fail-with-body --silent --show-error \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=touchlineintelligence.com" | jq -r '.value')"
+          test -n "$OIDC_TOKEN"
+          test "$OIDC_TOKEN" != "null"
+          curl --fail-with-body --silent --show-error \
+            --retry 3 --retry-all-errors --retry-delay 5 --max-time 90 \
+            -X POST \
+            -H "Authorization: Bearer $OIDC_TOKEN" \
+            https://touchlineintelligence.com/api/internal/fixture-sync

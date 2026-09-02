@@ -57,6 +57,8 @@ The response also reports the four largest model factors and which side each fac
 
 `GET /api/status` returns the public operational state, last successful fixture sync, expected next sync, fixture-ledger counts, recent safe run summaries, and deployed model artifact versions. It also exposes privacy-safe aggregate telemetry: seven-day request/error counts, median and p95 latency, daily traffic, usage by product route, 30-day sync reliability, and durable database record counts. Raw request data, client identifiers, and provider error details are intentionally excluded.
 
+`POST /api/internal/fixture-sync` is the authenticated ingestion hook used by both manual operations and the redundant six-hour GitHub Actions scheduler. It fetches current fixtures, locks predictions before kickoff, grades completed matches, and records a durable success or failure run. Manual calls require `Authorization: Bearer <SYNC_SECRET>`. Scheduler calls use a short-lived GitHub Actions OIDC token whose signature, issuer, audience, repository, branch, workflow path, runner, event, and expiry are verified at the edge; no duplicated long-lived scheduler secret is stored.
+
 `GET /api/internal/diagnostics` returns deeper sync and API-error diagnostics and requires the same bearer secret as the manual fixture-sync endpoint.
 ### `GET /api/performance`
 
