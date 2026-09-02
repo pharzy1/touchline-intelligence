@@ -1,6 +1,6 @@
 {
-  "version": "valuation-ridge-2025-v1",
-  "trained_at": "2026-09-01T22:48:31.502875+00:00",
+  "version": "valuation-ridge-auto-33681984060",
+  "trained_at": "2026-09-02T20:54:08.712403+00:00",
   "competition": "GB1",
   "season": 2025,
   "currency": "EUR",
@@ -63,7 +63,7 @@
     -0.0064745976,
     -0.0508329225
   ],
-  "uncertainty_ratio": 0.4984076256170191,
+  "uncertainty_ratio": 0.4984076256170177,
   "prediction_interval": {
     "method": "seeded_bootstrap_percentile_80",
     "seed": 2026,
@@ -1490,7 +1490,7 @@
         0.154523722,
         0.0296755778,
         -0.0080758716,
-        -0.005631021,
+        -0.0056310211,
         -0.0247230791
       ],
       [
