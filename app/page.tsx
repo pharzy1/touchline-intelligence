@@ -1,30 +1,19 @@
-import { ValuationWorkbench } from "./valuation-workbench";
 import model from "../data/valuation-model.json";
+import { SiteNav } from "./site-nav";
 
 const Arrow = () => <span aria-hidden="true">↗</span>;
 
 export default function Home() {
   return (
     <main>
-      <nav className="nav shell" aria-label="Primary navigation">
-        <a className="brand" href="#top" aria-label="Touchline home">
-          <span className="brand-mark">T</span>
-          <span>TOUCHLINE</span>
-        </a>
-        <div className="nav-links">
-          <a className="active" href="#valuation">Valuation</a>
-          <a href="/scouting">Scouting</a>
-          <a href="/matches">Matches</a>
-        </div>
-        <a className="github-link" href="#model-card">Model card <Arrow /></a>
-      </nav>
+      <SiteNav active="home" />
 
       <section className="hero shell" id="top">
         <div className="eyebrow"><span /> PREMIER LEAGUE INTELLIGENCE</div>
         <h1>Find the signal<br />before the market does.</h1>
         <div className="hero-foot">
           <p>Decision tools for player valuation, squad planning, and match analysis—built on transparent, reproducible data.</p>
-          <a className="primary-cta" href="#valuation">Open valuation lab <span aria-hidden="true">↓</span></a>
+          <a className="primary-cta" href="/transfers">Build a transfer scenario <span aria-hidden="true">↗</span></a>
         </div>
         <div className="hero-rule" />
         <div className="ticker" aria-label="Platform statistics">
@@ -33,17 +22,6 @@ export default function Home() {
           <div><strong>€{Math.round(model.metrics.mae_eur / 1_000_000)}m</strong><span>validation MAE</span></div>
           <div><strong>{model.metrics.r2.toFixed(2)}</strong><span>validation R²</span></div>
         </div>
-      </section>
-
-      <section className="workbench-wrap" id="valuation">
-        <div className="shell section-heading">
-          <div>
-            <span className="section-index">01 / 03</span>
-            <h2>Player valuation lab</h2>
-          </div>
-          <p>Adjust a player profile and see how performance, age, role, and league experience influence the model’s estimate.</p>
-        </div>
-        <ValuationWorkbench />
       </section>
 
       <section className="model-section shell" id="model-card">
@@ -65,13 +43,14 @@ export default function Home() {
       <section className="roadmap" id="roadmap">
         <div className="shell">
           <div className="section-heading light">
-            <div><span className="section-index">PLATFORM ROADMAP</span><h2>One data spine.<br />Three decisions.</h2></div>
-            <p>The valuation engine is the first complete module. Shared player and match data unlocks two more without rebuilding the foundation.</p>
+            <div><span className="section-index">LIVE PRODUCT SUITE</span><h2>One data spine.<br />Four decisions.</h2></div>
+            <p>Each capability has its own focused page while sharing versioned player, valuation, and match-model artifacts.</p>
           </div>
           <div className="roadmap-grid">
-            <article className="roadmap-card live"><span className="status">LIVE MVP</span><span className="number">01</span><h3>Value a player</h3><p>Estimate market value from performance, age, position, and experience.</p><a href="#valuation">Try the model <Arrow /></a></article>
+            <article className="roadmap-card live"><span className="status">LIVE</span><span className="number">01</span><h3>Value a player</h3><p>Estimate market value from performance, age, position, and experience.</p><a href="/valuation">Try the model <Arrow /></a></article>
             <article className="roadmap-card live-secondary"><span className="status">LIVE</span><span className="number">02</span><h3>Find a profile</h3><p>Surface statistically similar players within recruitment constraints.</p><a href="/scouting">Open scouting lab <Arrow /></a></article>
             <article className="roadmap-card live-tertiary"><span className="status">LIVE</span><span className="number">03</span><h3>Read the match</h3><p>Compare team form and estimate calibrated win, draw, and loss probabilities.</p><a href="/matches">Open match lab <Arrow /></a></article>
+            <article className="roadmap-card live-transfer"><span className="status">NEW</span><span className="number">04</span><h3>Plan a transfer</h3><p>Compare replacement profiles, model costs, trade-offs, and potential savings.</p><a href="/transfers">Build a scenario <Arrow /></a></article>
           </div>
         </div>
       </section>

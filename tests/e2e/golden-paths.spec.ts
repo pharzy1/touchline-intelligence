@@ -1,11 +1,19 @@
 import { expect, test } from "@playwright/test";
 
 test("valuation updates and produces a shareable URL", async ({ page }) => {
-  await page.goto("/#valuation");
+  await page.goto("/valuation");
   await expect(page.getByText("Estimated market value")).toBeVisible();
   await page.getByLabel("Goals").fill("20");
   await expect(page).toHaveURL(/goals=20/);
   await expect(page.getByText("MODEL CONTRIBUTIONS")).toBeVisible();
+});
+
+test("transfer builder composes scouting and valuation", async ({ page }) => {
+  await page.goto("/transfers");
+  await expect(page.getByText("REPLACEMENT SHORTLIST")).toBeVisible();
+  await page.getByRole("button", { name: /COMPARE/ }).first().click();
+  await expect(page.getByText("PROFILE TRADE-OFFS")).toBeVisible();
+  await expect(page).toHaveURL(/alternatives=/);
 });
 
 test("scouting returns explained alternatives", async ({ page }) => {

@@ -20,26 +20,30 @@ async function requestWorker(request) {
 }
 
 test("renders the Touchline valuation product", async () => {
-  const response = await render();
+  const response = await render("/valuation");
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
   const html = await response.text();
-  assert.match(html, /<title>Touchline — Premier League Intelligence<\/title>/i);
-  assert.match(html, /Find the signal/);
-  assert.match(html, /Player valuation lab/);
+  assert.match(html, /<title>Valuation Lab — Touchline<\/title>/i);
+  assert.match(html, /Price the profile/);
   assert.match(html, /Estimated market value/);
-  assert.match(html, /Find a profile/);
-  assert.match(html, /Read the match/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
 });
 
 test("includes accessible controls and social metadata", async () => {
-  const response = await render();
+  const response = await render("/valuation");
   const html = await response.text();
   assert.match(html, /aria-label="Primary navigation"/);
   assert.match(html, /type="range"/);
   assert.match(html, /property="og:image"/);
   assert.match(html, /name="twitter:card" content="summary_large_image"/);
+});
+
+test("renders separate product routes and the transfer builder", async () => {
+  const home = await (await render()).text();
+  assert.match(home, /href="\/valuation"/); assert.match(home, /href="\/scouting"/); assert.match(home, /href="\/transfers"/); assert.match(home, /href="\/matches"/);
+  const response = await render("/transfers"); const html = await response.text();
+  assert.equal(response.status, 200); assert.match(html, /Replace the role/); assert.match(html, /REFERENCE PLAYER/); assert.match(html, /REPLACEMENT SHORTLIST/);
 });
 
 test("serves a versioned trained-model prediction", async () => {
