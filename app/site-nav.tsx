@@ -1,4 +1,4 @@
-type Page = "home" | "valuation" | "scouting" | "transfers" | "matches" | "status";
+type Page = "home" | "valuation" | "scouting" | "compare" | "transfers" | "matches" | "status";
 
 export function SiteNav({ active }: { active: Page }) {
   return <nav className="nav shell" aria-label="Primary navigation">
@@ -6,6 +6,7 @@ export function SiteNav({ active }: { active: Page }) {
     <div className="nav-links">
       <a className={active === "valuation" ? "active" : ""} href="/valuation">Valuation</a>
       <a className={active === "scouting" ? "active" : ""} href="/scouting">Scouting</a>
+      <a className={active === "compare" ? "active" : ""} href="/compare">Compare</a>
       <a className={active === "transfers" ? "active" : ""} href="/transfers">Transfers</a>
       <a className={active === "matches" ? "active" : ""} href="/matches">Matches</a>
     </div>

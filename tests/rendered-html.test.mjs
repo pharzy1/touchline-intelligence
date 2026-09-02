@@ -41,9 +41,14 @@ test("includes accessible controls and social metadata", async () => {
 
 test("renders separate product routes and the transfer builder", async () => {
   const home = await (await render()).text();
-  assert.match(home, /href="\/valuation"/); assert.match(home, /href="\/scouting"/); assert.match(home, /href="\/transfers"/); assert.match(home, /href="\/matches"/);
+  assert.match(home, /href="\/valuation"/); assert.match(home, /href="\/scouting"/); assert.match(home, /href="\/compare"/); assert.match(home, /href="\/transfers"/); assert.match(home, /href="\/matches"/);
   const response = await render("/transfers"); const html = await response.text();
   assert.equal(response.status, 200); assert.match(html, /Replace the role/); assert.match(html, /REFERENCE PLAYER/); assert.match(html, /REPLACEMENT SHORTLIST/);
+});
+
+test("renders the shareable player comparison workspace", async () => {
+  const response = await render("/compare?players=433177,583255"); const html = await response.text();
+  assert.equal(response.status, 200); assert.match(html, /Player Comparison — Touchline/); assert.match(html, /See the trade-offs/); assert.match(html, /Player comparison workspace/);
 });
 
 test("renders the photo-credit ledger", async () => {

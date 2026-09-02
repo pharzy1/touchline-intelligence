@@ -35,7 +35,7 @@ jobs:
         run: pnpm check
       - name: Install Chromium
         run: pnpm exec playwright install --with-deps chromium
-      - name: Run seven golden-path browser tests
+      - name: Run eight golden-path browser tests
         run: pnpm test:e2e
       - name: Upload Playwright diagnostics
         if: ${{ failure() }}

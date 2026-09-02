@@ -16,6 +16,14 @@ test("transfer builder composes scouting and valuation", async ({ page }) => {
   await expect(page).toHaveURL(/alternatives=/);
 });
 
+test("comparison workspace loads shareable player evidence", async ({ page }) => {
+  await page.goto("/compare?players=433177,583255");
+  await expect(page.getByText("PROFILE SHAPE")).toBeVisible();
+  await expect(page.getByText("Side-by-side production")).toBeVisible();
+  await expect(page.getByText("DECISION NOTES")).toBeVisible();
+  await expect(page).toHaveURL(/players=433177%2C583255|players=433177,583255/);
+});
+
 test("scouting returns explained alternatives", async ({ page }) => {
   await page.goto("/scouting");
   await page.getByPlaceholder("e.g. Bukayo Saka").fill("Haaland");
@@ -55,6 +63,7 @@ test("player profile connects history to transfer decisions", async ({ page }) =
   await expect(page.getByText("LATEST RECORDED VALUE")).toBeVisible();
   await expect(page.getByText("Performance-priced")).toBeVisible();
   await expect(page.getByRole("link", { name: /Build transfer scenario/ })).toHaveAttribute("href", "/transfers?player=433177");
+  await expect(page.getByRole("link", { name: /Compare this player/ })).toHaveAttribute("href", "/compare?players=433177");
   await page.getByRole("link", { name: "Find similar profiles" }).click();
   await expect(page).toHaveURL(/scouting\?player_id=433177/);
   await expect(page.getByRole("heading", { name: "Bukayo Saka" })).toBeVisible();
