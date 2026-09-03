@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { getChatGPTUser } from "../../chatgpt-auth";
+import { recordError, recordSecurityEvent } from "../shared";
+export { rateLimit } from "../shared";
 
 export const kindSchema = z.enum(["squad", "transfer"]);
 export const payloadSchema = z.object({
@@ -43,12 +45,16 @@ export function activity(db: D1Database, planId: string, user: { userId: string;
   return db.prepare("INSERT INTO workspace_plan_activity (plan_id, actor_id, actor_email, action, detail, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(planId, user.userId, user.email, action, detail, new Date().toISOString());
 }
 
+export function workspaceDenial(route: string, detail: string) {
+  return recordSecurityEvent("authorization_denied", route, 403, null, detail);
+}
+
 export function publicSlug() {
   return Array.from(crypto.getRandomValues(new Uint8Array(12)), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-export function validationError(error: unknown) {
+export async function validationError(error: unknown) {
   if (error instanceof z.ZodError) return Response.json({ error: "Invalid workspace request", issues: error.issues }, { status: 400 });
-  console.error(JSON.stringify({ event: "workspace_error", message: error instanceof Error ? error.message : "Unknown failure" }));
-  return Response.json({ error: "Workspace request failed" }, { status: 500 });
+  const fingerprint = await recordError("/api/workspace", error);
+  return Response.json({ error: "Workspace request failed", fingerprint }, { status: 500 });
 }

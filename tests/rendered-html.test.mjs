@@ -65,6 +65,13 @@ test("protects account-owned workspace routes", async () => {
   assert.equal(room.status, 401); assert.match((await room.json()).error, /Sign in with ChatGPT/);
 });
 
+test("protects the private operations console", async () => {
+  const page = await render("/operations");
+  assert.ok([302, 307, 308].includes(page.status)); assert.match(page.headers.get("location") ?? "", /\/signin-with-chatgpt\?return_to=/);
+  const api = await requestWorker(new Request("http://localhost/api/operations"));
+  assert.equal(api.status, 401); assert.match((await api.json()).error, /Sign in/);
+});
+
 test("renders the photo-credit ledger", async () => {
   const response = await render("/photo-credits"); const html = await response.text();
   assert.equal(response.status, 200); assert.match(html, /Player photo credits/); assert.match(html, /Wikimedia Commons source/); assert.match(html, /Fallback policy/);

@@ -114,13 +114,30 @@ async function runFixtureSync(env: Env, trigger: "cron" | "scheduler" | "manual"
   try {
     const summary = await syncFixtures(env); const completedAt = new Date().toISOString(); const durationMs = Date.now() - started;
     await env.DB.prepare("INSERT INTO sync_runs (source, trigger, status, started_at, completed_at, fixtures_fetched, created_candidates, graded_candidates, skipped, statements, duration_ms, error_message) VALUES (?, ?, 'success', ?, ?, ?, ?, ?, ?, ?, ?, NULL)").bind("Fantasy Premier League", trigger, startedAt, completedAt, summary.fixturesFetched, summary.createdCandidates, summary.gradedCandidates, summary.skipped, summary.statements, durationMs).run();
+    await maintainOperations(env);
     return { ...summary, trigger, durationMs };
   } catch (error) {
     const completedAt = new Date().toISOString(); const durationMs = Date.now() - started; const message = (error instanceof Error ? error.message : "Unknown sync failure").replace(/[\r\n]+/g, " ").slice(0, 240);
     try { await env.DB.prepare("INSERT INTO sync_runs (source, trigger, status, started_at, completed_at, fixtures_fetched, created_candidates, graded_candidates, skipped, statements, duration_ms, error_message) VALUES (?, ?, 'failed', ?, ?, 0, 0, 0, 0, 0, ?, ?)").bind("Fantasy Premier League", trigger, startedAt, completedAt, durationMs, message).run(); } catch { /* Preserve the original provider failure. */ }
+    try { await env.DB.prepare("INSERT INTO operational_alerts (fingerprint, severity, title, detail, created_at, resolved_at) VALUES ('fixture-sync-failed', 'critical', 'Fixture synchronization failed', ?, ?, NULL)").bind(message, completedAt).run(); } catch { /* The alert store must not mask the provider failure. */ }
     console.error(JSON.stringify({ event: "fixture_sync_failed", trigger, message, durationMs }));
     throw error;
   }
+}
+
+async function maintainOperations(env: Env) {
+  const summary = await env.DB.prepare("SELECT COUNT(*) AS requests, SUM(CASE WHEN status >= 500 THEN 1 ELSE 0 END) AS failures FROM api_events WHERE julianday(created_at) >= julianday('now', '-1 hour')").first<{ requests: number; failures: number }>();
+  const requests = summary?.requests ?? 0; const failures = summary?.failures ?? 0; const rate = requests ? failures / requests : 0; const now = new Date().toISOString();
+  const statements = [
+    env.DB.prepare("DELETE FROM rate_limit_windows WHERE julianday(expires_at) < julianday('now')"),
+    env.DB.prepare("DELETE FROM api_events WHERE julianday(created_at) < julianday('now', '-30 days')"),
+    env.DB.prepare("DELETE FROM security_events WHERE julianday(created_at) < julianday('now', '-30 days')"),
+    env.DB.prepare("DELETE FROM error_events WHERE julianday(created_at) < julianday('now', '-30 days')"),
+    env.DB.prepare("UPDATE operational_alerts SET resolved_at = ? WHERE fingerprint = 'api-error-rate' AND resolved_at IS NULL AND ? <= 0.05").bind(now, rate),
+  ];
+  if (requests >= 20 && rate > .05) statements.push(env.DB.prepare("INSERT INTO operational_alerts (fingerprint, severity, title, detail, created_at, resolved_at) SELECT 'api-error-rate', 'critical', 'Elevated API error rate', ?, ?, NULL WHERE NOT EXISTS (SELECT 1 FROM operational_alerts WHERE fingerprint = 'api-error-rate' AND resolved_at IS NULL)").bind(`${failures} of ${requests} requests returned 5xx in the last hour`, now));
+  await env.DB.batch(statements);
+  if (requests >= 20 && rate > .05) console.error(JSON.stringify({ event: "operational_alert", fingerprint: "api-error-rate", severity: "critical", requests, failures, rate, at: now }));
 }
 
 // Image security config. SVG sources with .svg extension auto-skip the

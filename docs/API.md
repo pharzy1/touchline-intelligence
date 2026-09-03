@@ -57,6 +57,8 @@ Matches include a 0–100 similarity score and the three closest shared feature 
 
 `GET`, `POST`, and `DELETE /api/workspace/plans/:id/collaboration` expose the room roster, comments, and activity ledger. Owners grant or revoke editor/viewer access by email; editors may update versioned plan content, viewers remain read-only, and every access decision is rechecked by the server.
 
+`GET /api/operations` is restricted to authenticated emails configured in `OPS_ADMIN_EMAILS`. It returns aggregated route latency, application-error fingerprints, security denials, durable rate-limit pressure, scheduled-sync health, alerts, and product record counts. Raw IP addresses and request payloads are never returned or persisted.
+
 The response also reports the four largest model factors and which side each factor favours.
 
 ## Production status

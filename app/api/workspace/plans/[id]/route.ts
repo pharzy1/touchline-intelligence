@@ -1,10 +1,11 @@
-import { activity, canEdit, parsePlan, planAccess, publicSlug, updatePlanSchema, validationError, workspaceContext } from "../../shared";
+import { activity, canEdit, parsePlan, planAccess, publicSlug, rateLimit, updatePlanSchema, validationError, workspaceContext, workspaceDenial } from "../../shared";
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ id: string }> };
 
-export async function GET(_request: Request, { params }: Context) {
+export async function GET(request: Request, { params }: Context) {
+  const limited = await rateLimit(request, 120); if (limited) return limited;
   const context = await workspaceContext(); if ("error" in context) return context.error;
   try {
     const { id } = await params; const plan = await planAccess(context.db, id, context.user);
@@ -15,13 +16,14 @@ export async function GET(_request: Request, { params }: Context) {
 }
 
 export async function PATCH(request: Request, { params }: Context) {
+  const limited = await rateLimit(request, 60); if (limited) return limited;
   const context = await workspaceContext(); if ("error" in context) return context.error;
   try {
     const { id } = await params; const input = updatePlanSchema.parse(await request.json());
     const current = await planAccess(context.db, id, context.user);
     if (!current) return Response.json({ error: "Plan not found" }, { status: 404 });
-    if (!canEdit(current.access_role)) return Response.json({ error: "Viewer access is read-only" }, { status: 403 });
-    if (current.access_role !== "owner" && (input.visibility !== undefined || input.archived !== undefined)) return Response.json({ error: "Only the owner can change sharing or archive this plan" }, { status: 403 });
+    if (!canEdit(current.access_role)) { await workspaceDenial("/api/workspace/plans/:id", "viewer_edit"); return Response.json({ error: "Viewer access is read-only" }, { status: 403 }); }
+    if (current.access_role !== "owner" && (input.visibility !== undefined || input.archived !== undefined)) { await workspaceDenial("/api/workspace/plans/:id", "editor_owner_operation"); return Response.json({ error: "Only the owner can change sharing or archive this plan" }, { status: 403 }); }
     if (Number(current.version) !== input.expectedVersion) return Response.json({ error: "This plan changed elsewhere. Reload before saving.", currentVersion: current.version }, { status: 409 });
     const version = Number(current.version) + 1; const now = new Date().toISOString(); const name = input.name ?? String(current.name); const description = input.description ?? String(current.description); const payload = JSON.stringify(input.payload ?? JSON.parse(String(current.payload_json))); const visibility = input.visibility ?? String(current.visibility); const archived = input.archived === undefined ? Number(current.archived) : Number(input.archived); const slug = visibility === "public" ? String(current.public_slug ?? publicSlug()) : null;
     const results = await context.db.batch([
@@ -34,12 +36,13 @@ export async function PATCH(request: Request, { params }: Context) {
   } catch (error) { return validationError(error); }
 }
 
-export async function DELETE(_request: Request, { params }: Context) {
+export async function DELETE(request: Request, { params }: Context) {
+  const limited = await rateLimit(request, 20); if (limited) return limited;
   const context = await workspaceContext(); if ("error" in context) return context.error;
   try {
     const { id } = await params; const current = await planAccess(context.db, id, context.user);
     if (!current) return Response.json({ error: "Plan not found" }, { status: 404 });
-    if (current.access_role !== "owner") return Response.json({ error: "Only the owner can delete this plan" }, { status: 403 });
+    if (current.access_role !== "owner") { await workspaceDenial("/api/workspace/plans/:id", "non_owner_delete"); return Response.json({ error: "Only the owner can delete this plan" }, { status: 403 }); }
     await context.db.prepare("DELETE FROM workspace_plans WHERE id = ? AND owner_id = ?").bind(id, context.user.userId).run();
     return new Response(null, { status: 204 });
   } catch (error) { return validationError(error); }

@@ -6,7 +6,7 @@ export const runtime = "edge";
 type Row = { fixture_id: number; gameweek: number | null; home_team: string; away_team: string; kickoff_at: string | null; status: string; predicted_at: string; home_probability: number; draw_probability: number; away_probability: number; predicted_class: string; home_score: number | null; away_score: number | null; actual_class: string | null; correct: number | null; brier_score: number | null; scored_at: string | null };
 
 export async function GET(request: Request) {
-  const startedAt = Date.now(); const limited = rateLimit(request, 30); if (limited) return limited;
+  const startedAt = Date.now(); const limited = await rateLimit(request, 30); if (limited) return limited;
   try {
     const runtimeModule = "cloudflare:workers";
     const { env } = await import(/* @vite-ignore */ runtimeModule) as { env: { DB?: D1Database } };

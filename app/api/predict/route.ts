@@ -70,7 +70,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const startedAt = Date.now();
-  const limited = rateLimit(request); if (limited) return limited;
+  const limited = await rateLimit(request); if (limited) return limited;
   try {
     const input = parse(inputSchema, await request.json()) as Input;
     const result = predict(input);

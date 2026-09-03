@@ -23,7 +23,7 @@ function distance(left: Player, right: Player) {
 }
 
 export async function GET(request: Request) {
-  const startedAt = Date.now(); const limited = rateLimit(request, 90); if (limited) return limited;
+  const startedAt = Date.now(); const limited = await rateLimit(request, 90); if (limited) return limited;
   const params = new URL(request.url).searchParams;
   let input: { player_id?: number; q?: string; position?: string; max_age?: number; max_value_eur?: number; club?: string };
   try { input = parse(z.object({ player_id: z.coerce.number().int().positive().optional(), q: z.string().max(80).optional(), position: z.enum(["Attack", "Midfield", "Defender", "Goalkeeper", ""]).optional(), max_age: z.coerce.number().int().min(16).max(99).optional(), max_value_eur: z.coerce.number().int().positive().optional(), club: z.string().max(80).optional() }), Object.fromEntries(params)); } catch (error) { return apiError(error); }

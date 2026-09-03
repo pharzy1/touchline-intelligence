@@ -3,7 +3,7 @@ import { rateLimit } from "../shared";
 export const runtime = "edge";
 
 export async function GET(request: Request) {
-  const limited = rateLimit(request, 30); if (limited) return limited;
+  const limited = await rateLimit(request, 30); if (limited) return limited;
   try {
     const runtimeModule = "cloudflare:workers";
     const { env } = await import(/* @vite-ignore */ runtimeModule) as { env: { DB?: D1Database } };

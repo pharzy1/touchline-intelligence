@@ -1,9 +1,10 @@
-import { activity, createPlanSchema, parsePlan, validationError, workspaceContext } from "../shared";
+import { activity, createPlanSchema, parsePlan, rateLimit, validationError, workspaceContext } from "../shared";
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
+  const limited = await rateLimit(request, 120); if (limited) return limited;
   const context = await workspaceContext(); if ("error" in context) return context.error;
   const includeArchived = new URL(request.url).searchParams.get("archived") === "all";
   try {
@@ -17,6 +18,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const limited = await rateLimit(request, 30); if (limited) return limited;
   const context = await workspaceContext(); if ("error" in context) return context.error;
   try {
     const input = createPlanSchema.parse(await request.json()); const id = crypto.randomUUID(); const now = new Date().toISOString(); const payload = JSON.stringify(input.payload);

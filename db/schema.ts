@@ -42,6 +42,49 @@ export const apiEvents = sqliteTable("api_events", {
   id: integer("id").primaryKey({ autoIncrement: true }), route: text("route").notNull(), status: integer("status").notNull(), latencyMs: integer("latency_ms").notNull(), createdAt: text("created_at").notNull(),
 }, (table) => [index("idx_api_events_route_created").on(table.route, table.createdAt)]);
 
+export const rateLimitWindows = sqliteTable("rate_limit_windows", {
+  id: text("id").primaryKey(),
+  subjectHash: text("subject_hash").notNull(),
+  route: text("route").notNull(),
+  windowStartedAt: text("window_started_at").notNull(),
+  count: integer("count").notNull().default(1),
+  expiresAt: text("expires_at").notNull(),
+}, (table) => [
+  index("idx_rate_limit_windows_subject_route").on(table.subjectHash, table.route),
+  index("idx_rate_limit_windows_expires").on(table.expiresAt),
+]);
+
+export const securityEvents = sqliteTable("security_events", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  category: text("category").notNull(),
+  route: text("route").notNull(),
+  status: integer("status").notNull(),
+  subjectHash: text("subject_hash"),
+  detail: text("detail").notNull().default(""),
+  createdAt: text("created_at").notNull(),
+}, (table) => [index("idx_security_events_category_created").on(table.category, table.createdAt)]);
+
+export const errorEvents = sqliteTable("error_events", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  route: text("route").notNull(),
+  fingerprint: text("fingerprint").notNull(),
+  message: text("message").notNull(),
+  createdAt: text("created_at").notNull(),
+}, (table) => [index("idx_error_events_route_created").on(table.route, table.createdAt)]);
+
+export const operationalAlerts = sqliteTable("operational_alerts", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  fingerprint: text("fingerprint").notNull(),
+  severity: text("severity").notNull(),
+  title: text("title").notNull(),
+  detail: text("detail").notNull(),
+  createdAt: text("created_at").notNull(),
+  resolvedAt: text("resolved_at"),
+}, (table) => [
+  index("idx_operational_alerts_created").on(table.createdAt),
+  index("idx_operational_alerts_resolved_created").on(table.resolvedAt, table.createdAt),
+]);
+
 export const fixturePredictions = sqliteTable("fixture_predictions", {
   fixtureId: integer("fixture_id").primaryKey(),
   gameweek: integer("gameweek"),

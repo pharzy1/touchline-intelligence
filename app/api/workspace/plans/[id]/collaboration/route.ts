@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { activity, commentSchema, inviteSchema, planAccess, validationError, workspaceContext } from "../../../shared";
+import { activity, commentSchema, inviteSchema, planAccess, rateLimit, validationError, workspaceContext, workspaceDenial } from "../../../shared";
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
@@ -9,7 +9,8 @@ const requestSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("comment"), comment: commentSchema }),
 ]);
 
-export async function GET(_request: Request, { params }: Context) {
+export async function GET(request: Request, { params }: Context) {
+  const limited = await rateLimit(request, 120); if (limited) return limited;
   const context = await workspaceContext(); if ("error" in context) return context.error;
   try {
     const { id } = await params; const plan = await planAccess(context.db, id, context.user);
@@ -24,13 +25,14 @@ export async function GET(_request: Request, { params }: Context) {
 }
 
 export async function POST(request: Request, { params }: Context) {
+  const limited = await rateLimit(request, 60); if (limited) return limited;
   const context = await workspaceContext(); if ("error" in context) return context.error;
   try {
     const { id } = await params; const plan = await planAccess(context.db, id, context.user);
     if (!plan) return Response.json({ error: "Plan not found" }, { status: 404 });
     const input = requestSchema.parse(await request.json()); const now = new Date().toISOString();
     if (input.action === "invite") {
-      if (plan.access_role !== "owner") return Response.json({ error: "Only the owner can manage access" }, { status: 403 });
+      if (plan.access_role !== "owner") { await workspaceDenial("/api/workspace/plans/:id/collaboration", "non_owner_invite"); return Response.json({ error: "Only the owner can manage access" }, { status: 403 }); }
       if (input.invite.email === context.user.email.toLowerCase()) return Response.json({ error: "You already own this plan" }, { status: 400 });
       const member = await context.db.prepare("SELECT id FROM workspace_plan_members WHERE plan_id = ? AND lower(email) = lower(?)").bind(id, input.invite.email).first<{ id: string }>();
       const memberId = member?.id ?? crypto.randomUUID();
@@ -50,11 +52,12 @@ export async function POST(request: Request, { params }: Context) {
 }
 
 export async function DELETE(request: Request, { params }: Context) {
+  const limited = await rateLimit(request, 20); if (limited) return limited;
   const context = await workspaceContext(); if ("error" in context) return context.error;
   try {
     const { id } = await params; const plan = await planAccess(context.db, id, context.user);
     if (!plan) return Response.json({ error: "Plan not found" }, { status: 404 });
-    if (plan.access_role !== "owner") return Response.json({ error: "Only the owner can revoke access" }, { status: 403 });
+    if (plan.access_role !== "owner") { await workspaceDenial("/api/workspace/plans/:id/collaboration", "non_owner_revoke"); return Response.json({ error: "Only the owner can revoke access" }, { status: 403 }); }
     const memberId = new URL(request.url).searchParams.get("member");
     if (!memberId) return Response.json({ error: "Member is required" }, { status: 400 });
     const member = await context.db.prepare("SELECT email FROM workspace_plan_members WHERE id = ? AND plan_id = ?").bind(memberId, id).first<{ email: string }>();

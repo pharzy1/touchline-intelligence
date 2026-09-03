@@ -43,6 +43,13 @@
       "when": 1788424768210,
       "tag": "0005_complete_valeria_richards",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1788425897782,
+      "tag": "0006_optimal_sumo",
+      "breakpoints": true
     }
   ]
 }

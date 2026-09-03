@@ -22,7 +22,7 @@ function teamFeatures(home: Team, away: Team) {
 }
 
 export async function GET(request: Request) {
-  const startedAt = Date.now(); const limited = rateLimit(request, 90); if (limited) return limited;
+  const startedAt = Date.now(); const limited = await rateLimit(request, 90); if (limited) return limited;
   const params = new URL(request.url).searchParams;
   let ids: { home_id?: number; away_id?: number };
   try { ids = parse(z.object({ home_id: z.coerce.number().int().positive().optional(), away_id: z.coerce.number().int().positive().optional() }), Object.fromEntries(params)); } catch (error) { return apiError(error); }
