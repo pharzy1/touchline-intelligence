@@ -116,3 +116,37 @@ export const workspacePlanVersions = sqliteTable("workspace_plan_versions", {
 }, (table) => [
   uniqueIndex("idx_workspace_plan_versions_plan_version").on(table.planId, table.version),
 ]);
+
+export const workspacePlanMembers = sqliteTable("workspace_plan_members", {
+  id: text("id").primaryKey(),
+  planId: text("plan_id").notNull().references(() => workspacePlans.id, { onDelete: "cascade" }),
+  email: text("email").notNull(),
+  userId: text("user_id"),
+  role: text("role").notNull(),
+  invitedBy: text("invited_by").notNull(),
+  createdAt: text("created_at").notNull(),
+}, (table) => [
+  uniqueIndex("idx_workspace_plan_members_plan_email").on(table.planId, table.email),
+  index("idx_workspace_plan_members_email").on(table.email),
+  index("idx_workspace_plan_members_user").on(table.userId),
+]);
+
+export const workspacePlanComments = sqliteTable("workspace_plan_comments", {
+  id: text("id").primaryKey(),
+  planId: text("plan_id").notNull().references(() => workspacePlans.id, { onDelete: "cascade" }),
+  authorId: text("author_id").notNull(),
+  authorEmail: text("author_email").notNull(),
+  body: text("body").notNull(),
+  playerId: integer("player_id"),
+  createdAt: text("created_at").notNull(),
+}, (table) => [index("idx_workspace_plan_comments_plan_created").on(table.planId, table.createdAt)]);
+
+export const workspacePlanActivity = sqliteTable("workspace_plan_activity", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  planId: text("plan_id").notNull().references(() => workspacePlans.id, { onDelete: "cascade" }),
+  actorId: text("actor_id").notNull(),
+  actorEmail: text("actor_email").notNull(),
+  action: text("action").notNull(),
+  detail: text("detail").notNull().default(""),
+  createdAt: text("created_at").notNull(),
+}, (table) => [index("idx_workspace_plan_activity_plan_created").on(table.planId, table.createdAt)]);

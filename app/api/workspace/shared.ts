@@ -8,6 +8,8 @@ export const payloadSchema = z.object({
 }).passthrough();
 export const createPlanSchema = z.object({ kind: kindSchema, name: z.string().trim().min(1).max(80), description: z.string().trim().max(400).default(""), payload: payloadSchema });
 export const updatePlanSchema = z.object({ name: z.string().trim().min(1).max(80).optional(), description: z.string().trim().max(400).optional(), payload: payloadSchema.optional(), visibility: z.enum(["private", "public"]).optional(), archived: z.boolean().optional(), expectedVersion: z.number().int().positive() }).refine((value) => Object.keys(value).some((key) => key !== "expectedVersion"), "No changes supplied");
+export const inviteSchema = z.object({ email: z.string().trim().toLowerCase().email().max(254), role: z.enum(["editor", "viewer"]) });
+export const commentSchema = z.object({ body: z.string().trim().min(1).max(800), playerId: z.number().int().positive().nullable().optional() });
 
 export async function workspaceContext() {
   const user = await getChatGPTUser();
@@ -20,6 +22,25 @@ export async function workspaceContext() {
 
 export function parsePlan(row: Record<string, unknown>) {
   return { ...row, archived: Boolean(row.archived), payload: JSON.parse(String(row.payload_json)), payload_json: undefined };
+}
+
+export type PlanRole = "owner" | "editor" | "viewer";
+
+export async function planAccess(db: D1Database, id: string, user: { userId: string; email: string }) {
+  const plan = await db.prepare(`SELECT p.*,
+    CASE WHEN p.owner_id = ? THEN 'owner' ELSE m.role END AS access_role
+    FROM workspace_plans p LEFT JOIN workspace_plan_members m
+      ON m.plan_id = p.id AND (m.user_id = ? OR lower(m.email) = lower(?))
+    WHERE p.id = ? AND (p.owner_id = ? OR m.id IS NOT NULL) LIMIT 1`)
+    .bind(user.userId, user.userId, user.email, id, user.userId).first<Record<string, unknown>>();
+  if (plan && plan.access_role !== "owner") await db.prepare("UPDATE workspace_plan_members SET user_id = ? WHERE plan_id = ? AND lower(email) = lower(?) AND user_id IS NULL").bind(user.userId, id, user.email).run();
+  return plan;
+}
+
+export function canEdit(role: unknown) { return role === "owner" || role === "editor"; }
+
+export function activity(db: D1Database, planId: string, user: { userId: string; email: string }, action: string, detail = "") {
+  return db.prepare("INSERT INTO workspace_plan_activity (plan_id, actor_id, actor_email, action, detail, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(planId, user.userId, user.email, action, detail, new Date().toISOString());
 }
 
 export function publicSlug() {

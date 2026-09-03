@@ -36,6 +36,13 @@
       "when": 1788423320159,
       "tag": "0004_sticky_ted_forrester",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1788424768210,
+      "tag": "0005_complete_valeria_richards",
+      "breakpoints": true
     }
   ]
 }

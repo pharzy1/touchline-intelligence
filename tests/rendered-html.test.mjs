@@ -61,6 +61,8 @@ test("protects account-owned workspace routes", async () => {
   assert.ok([302, 307, 308].includes(page.status)); assert.match(page.headers.get("location") ?? "", /\/signin-with-chatgpt\?return_to=/);
   const api = await requestWorker(new Request("http://localhost/api/workspace/plans"));
   assert.equal(api.status, 401); assert.match((await api.json()).error, /Sign in with ChatGPT/);
+  const room = await requestWorker(new Request("http://localhost/api/workspace/plans/plan-1/collaboration"));
+  assert.equal(room.status, 401); assert.match((await room.json()).error, /Sign in with ChatGPT/);
 });
 
 test("renders the photo-credit ledger", async () => {
