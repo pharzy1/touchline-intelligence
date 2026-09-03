@@ -132,6 +132,7 @@ export const syncRuns = sqliteTable("sync_runs", {
 export const workspacePlans = sqliteTable("workspace_plans", {
   id: text("id").primaryKey(),
   ownerId: text("owner_id").notNull(),
+  ownerEmail: text("owner_email"),
   kind: text("kind").notNull(),
   name: text("name").notNull(),
   description: text("description").notNull().default(""),
@@ -193,3 +194,58 @@ export const workspacePlanActivity = sqliteTable("workspace_plan_activity", {
   detail: text("detail").notNull().default(""),
   createdAt: text("created_at").notNull(),
 }, (table) => [index("idx_workspace_plan_activity_plan_created").on(table.planId, table.createdAt)]);
+
+export const notificationPreferences = sqliteTable("notification_preferences", {
+  email: text("email").primaryKey(),
+  collaborationEnabled: integer("collaboration_enabled").notNull().default(1),
+  weeklyEnabled: integer("weekly_enabled").notNull().default(1),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const notificationJobs = sqliteTable("notification_jobs", {
+  id: text("id").primaryKey(),
+  type: text("type").notNull(),
+  recipientEmail: text("recipient_email").notNull(),
+  actorEmail: text("actor_email"),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  href: text("href").notNull(),
+  status: text("status").notNull().default("pending"),
+  attempts: integer("attempts").notNull().default(0),
+  lockedAt: text("locked_at"),
+  availableAt: text("available_at").notNull(),
+  dedupeKey: text("dedupe_key").notNull(),
+  lastError: text("last_error"),
+  createdAt: text("created_at").notNull(),
+  processedAt: text("processed_at"),
+}, (table) => [
+  uniqueIndex("idx_notification_jobs_dedupe").on(table.dedupeKey),
+  index("idx_notification_jobs_status_available").on(table.status, table.availableAt),
+  index("idx_notification_jobs_recipient_created").on(table.recipientEmail, table.createdAt),
+]);
+
+export const notifications = sqliteTable("notifications", {
+  id: text("id").primaryKey(),
+  jobId: text("job_id").notNull().references(() => notificationJobs.id, { onDelete: "cascade" }),
+  recipientEmail: text("recipient_email").notNull(),
+  type: text("type").notNull(),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  href: text("href").notNull(),
+  readAt: text("read_at"),
+  createdAt: text("created_at").notNull(),
+}, (table) => [
+  uniqueIndex("idx_notifications_job").on(table.jobId),
+  index("idx_notifications_recipient_created").on(table.recipientEmail, table.createdAt),
+  index("idx_notifications_recipient_read").on(table.recipientEmail, table.readAt),
+]);
+
+export const notificationDeadLetters = sqliteTable("notification_dead_letters", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  jobId: text("job_id").notNull(),
+  recipientEmail: text("recipient_email").notNull(),
+  type: text("type").notNull(),
+  attempts: integer("attempts").notNull(),
+  error: text("error").notNull(),
+  createdAt: text("created_at").notNull(),
+}, (table) => [index("idx_notification_dead_letters_created").on(table.createdAt)]);

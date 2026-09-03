@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { activity, commentSchema, inviteSchema, planAccess, rateLimit, validationError, workspaceContext, workspaceDenial } from "../../../shared";
+import { activity, commentSchema, inviteSchema, notificationJob, planAccess, rateLimit, validationError, workspaceContext, workspaceDenial } from "../../../shared";
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
@@ -39,13 +39,17 @@ export async function POST(request: Request, { params }: Context) {
       await context.db.batch([
         member ? context.db.prepare("UPDATE workspace_plan_members SET role = ? WHERE id = ?").bind(input.invite.role, memberId) : context.db.prepare("INSERT INTO workspace_plan_members (id, plan_id, email, user_id, role, invited_by, created_at) VALUES (?, ?, ?, NULL, ?, ?, ?)").bind(memberId, id, input.invite.email, input.invite.role, context.user.userId, now),
         activity(context.db, id, context.user, member ? "access_changed" : "invited", `${input.invite.email} · ${input.invite.role}`),
+        notificationJob(context.db, { type: member ? "access_changed" : "workspace_invite", recipientEmail: input.invite.email, actorEmail: context.user.email, title: member ? "Your Touchline access changed" : "You were invited to a scouting room", body: `${context.user.displayName} granted you ${input.invite.role} access to ${String(plan.name)}.`, href: "/workspace", dedupeKey: `${member ? "role" : "invite"}:${memberId}:${input.invite.role}` }),
       ]);
       return Response.json({ member: { id: memberId, email: input.invite.email, role: input.invite.role, user_id: null, created_at: now } }, { status: member ? 200 : 201 });
     }
     const commentId = crypto.randomUUID();
+    const recipients = new Set<string>((await context.db.prepare("SELECT email FROM workspace_plan_members WHERE plan_id = ?").bind(id).all<{ email: string }>()).results.map((row) => row.email.toLowerCase()));
+    if (plan.owner_email) recipients.add(String(plan.owner_email).toLowerCase()); recipients.delete(context.user.email.toLowerCase());
     await context.db.batch([
       context.db.prepare("INSERT INTO workspace_plan_comments (id, plan_id, author_id, author_email, body, player_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(commentId, id, context.user.userId, context.user.email, input.comment.body, input.comment.playerId ?? null, now),
       activity(context.db, id, context.user, "commented", input.comment.playerId ? `Player ${input.comment.playerId}` : "Plan comment"),
+      ...Array.from(recipients, (email) => notificationJob(context.db, { type: "workspace_comment", recipientEmail: email, actorEmail: context.user.email, title: `New comment in ${String(plan.name)}`, body: input.comment.body.slice(0, 180), href: "/workspace", dedupeKey: `comment:${commentId}:${email}` })),
     ]);
     return Response.json({ comment: { id: commentId, author_email: context.user.email, body: input.comment.body, player_id: input.comment.playerId ?? null, created_at: now } }, { status: 201 });
   } catch (error) { return validationError(error); }
@@ -65,6 +69,7 @@ export async function DELETE(request: Request, { params }: Context) {
     await context.db.batch([
       context.db.prepare("DELETE FROM workspace_plan_members WHERE id = ? AND plan_id = ?").bind(memberId, id),
       activity(context.db, id, context.user, "access_revoked", member.email),
+      notificationJob(context.db, { type: "access_revoked", recipientEmail: member.email, actorEmail: context.user.email, title: "Scouting-room access removed", body: `Your access to ${String(plan.name)} was revoked.`, href: "/workspace", dedupeKey: `revoke:${id}:${memberId}` }),
     ]);
     return new Response(null, { status: 204 });
   } catch (error) { return validationError(error); }

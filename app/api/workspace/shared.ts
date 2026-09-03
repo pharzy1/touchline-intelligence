@@ -36,6 +36,7 @@ export async function planAccess(db: D1Database, id: string, user: { userId: str
     WHERE p.id = ? AND (p.owner_id = ? OR m.id IS NOT NULL) LIMIT 1`)
     .bind(user.userId, user.userId, user.email, id, user.userId).first<Record<string, unknown>>();
   if (plan && plan.access_role !== "owner") await db.prepare("UPDATE workspace_plan_members SET user_id = ? WHERE plan_id = ? AND lower(email) = lower(?) AND user_id IS NULL").bind(user.userId, id, user.email).run();
+  if (plan?.access_role === "owner" && !plan.owner_email) await db.prepare("UPDATE workspace_plans SET owner_email = ? WHERE id = ? AND owner_id = ?").bind(user.email, id, user.userId).run();
   return plan;
 }
 
@@ -47,6 +48,12 @@ export function activity(db: D1Database, planId: string, user: { userId: string;
 
 export function workspaceDenial(route: string, detail: string) {
   return recordSecurityEvent("authorization_denied", route, 403, null, detail);
+}
+
+export type NotificationInput = { type: string; recipientEmail: string; actorEmail?: string; title: string; body: string; href: string; dedupeKey: string };
+export function notificationJob(db: D1Database, input: NotificationInput) {
+  const now = new Date().toISOString();
+  return db.prepare("INSERT OR IGNORE INTO notification_jobs (id, type, recipient_email, actor_email, title, body, href, status, attempts, locked_at, available_at, dedupe_key, last_error, created_at, processed_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', 0, NULL, ?, ?, NULL, ?, NULL)").bind(crypto.randomUUID(), input.type, input.recipientEmail.toLowerCase(), input.actorEmail ?? null, input.title, input.body, input.href, now, input.dedupeKey, now);
 }
 
 export function publicSlug() {

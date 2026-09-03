@@ -140,6 +140,45 @@ async function maintainOperations(env: Env) {
   if (requests >= 20 && rate > .05) console.error(JSON.stringify({ event: "operational_alert", fingerprint: "api-error-rate", severity: "critical", requests, failures, rate, at: now }));
 }
 
+type NotificationJob = { id: string; type: string; recipient_email: string; title: string; body: string; href: string; attempts: number };
+
+async function enqueueWeeklySummaries(env: Env, now: Date) {
+  if (now.getUTCDay() !== 0) return;
+  const week = now.toISOString().slice(0, 10); const emails = await env.DB.prepare("SELECT lower(owner_email) AS email FROM workspace_plans WHERE owner_email IS NOT NULL UNION SELECT lower(email) AS email FROM workspace_plan_members").all<{ email: string }>();
+  const statements = emails.results.map(({ email }) => env.DB.prepare("INSERT OR IGNORE INTO notification_jobs (id, type, recipient_email, actor_email, title, body, href, status, attempts, locked_at, available_at, dedupe_key, last_error, created_at, processed_at) VALUES (?, 'weekly_summary', ?, NULL, 'Your weekly Touchline briefing', 'Review new fixture predictions, model performance, and collaborative scouting activity.', '/matches/performance', 'pending', 0, NULL, ?, ?, NULL, ?, NULL)").bind(crypto.randomUUID(), email, now.toISOString(), `weekly:${week}:${email}`, now.toISOString()));
+  for (let index = 0; index < statements.length; index += 75) await env.DB.batch(statements.slice(index, index + 75));
+}
+
+async function processNotificationJobs(env: Env) {
+  const now = new Date(); await enqueueWeeklySummaries(env, now);
+  const jobs = await env.DB.prepare("SELECT id, type, recipient_email, title, body, href, attempts FROM notification_jobs WHERE (status IN ('pending', 'retry') AND julianday(available_at) <= julianday('now')) OR (status = 'processing' AND julianday(locked_at) <= julianday('now', '-10 minutes')) ORDER BY created_at LIMIT 50").all<NotificationJob>();
+  let delivered = 0; let retried = 0; let dead = 0;
+  for (const job of jobs.results) {
+    const claimed = await env.DB.prepare("UPDATE notification_jobs SET status = 'processing', attempts = attempts + 1, locked_at = ? WHERE id = ? AND ((status IN ('pending', 'retry') AND julianday(available_at) <= julianday('now')) OR (status = 'processing' AND julianday(locked_at) <= julianday('now', '-10 minutes')))").bind(now.toISOString(), job.id).run();
+    if (!claimed.meta.changes) continue;
+    const attempt = job.attempts + 1;
+    try {
+      const preference = await env.DB.prepare("SELECT collaboration_enabled, weekly_enabled FROM notification_preferences WHERE lower(email) = lower(?)").bind(job.recipient_email).first<{ collaboration_enabled: number; weekly_enabled: number }>();
+      const enabled = job.type === "weekly_summary" ? preference?.weekly_enabled !== 0 : preference?.collaboration_enabled !== 0;
+      const completedAt = new Date().toISOString();
+      await env.DB.batch([
+        ...(enabled ? [env.DB.prepare("INSERT OR IGNORE INTO notifications (id, job_id, recipient_email, type, title, body, href, read_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?)").bind(crypto.randomUUID(), job.id, job.recipient_email, job.type, job.title, job.body, job.href, completedAt)] : []),
+        env.DB.prepare("UPDATE notification_jobs SET status = ?, processed_at = ?, locked_at = NULL, last_error = NULL WHERE id = ?").bind(enabled ? "delivered" : "suppressed", completedAt, job.id),
+      ]);
+      delivered += Number(enabled);
+    } catch (error) {
+      const message = (error instanceof Error ? error.message : "Delivery failed").replace(/[\r\n]+/g, " ").slice(0, 200); const failedAt = new Date().toISOString();
+      if (attempt >= 5) {
+        await env.DB.batch([env.DB.prepare("UPDATE notification_jobs SET status = 'dead', locked_at = NULL, last_error = ? WHERE id = ?").bind(message, job.id), env.DB.prepare("INSERT INTO notification_dead_letters (job_id, recipient_email, type, attempts, error, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(job.id, job.recipient_email, job.type, attempt, message, failedAt)]); dead += 1;
+      } else {
+        const delayMinutes = Math.min(60, 2 ** attempt); const retryAt = new Date(Date.now() + delayMinutes * 60_000).toISOString();
+        await env.DB.prepare("UPDATE notification_jobs SET status = 'retry', available_at = ?, locked_at = NULL, last_error = ? WHERE id = ?").bind(retryAt, message, job.id).run(); retried += 1;
+      }
+    }
+  }
+  console.log(JSON.stringify({ event: "notification_worker", examined: jobs.results.length, delivered, retried, dead, at: new Date().toISOString() }));
+}
+
 // Image security config. SVG sources with .svg extension auto-skip the
 // optimization endpoint on the client side (served directly, no proxy).
 // To route SVGs through the optimizer (with security headers), set
@@ -182,8 +221,9 @@ const worker = {
 
     return handler.fetch(request, env, ctx);
   },
-  async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext) {
-    ctx.waitUntil(runFixtureSync(env, "cron"));
+  async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext) {
+    ctx.waitUntil(processNotificationJobs(env));
+    if (controller.cron === "17 */6 * * *") ctx.waitUntil(runFixtureSync(env, "cron"));
   },
 };
 

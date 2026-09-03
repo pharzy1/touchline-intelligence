@@ -1,4 +1,4 @@
-import { activity, canEdit, parsePlan, planAccess, publicSlug, rateLimit, updatePlanSchema, validationError, workspaceContext, workspaceDenial } from "../../shared";
+import { activity, canEdit, notificationJob, parsePlan, planAccess, publicSlug, rateLimit, updatePlanSchema, validationError, workspaceContext, workspaceDenial } from "../../shared";
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
@@ -26,10 +26,13 @@ export async function PATCH(request: Request, { params }: Context) {
     if (current.access_role !== "owner" && (input.visibility !== undefined || input.archived !== undefined)) { await workspaceDenial("/api/workspace/plans/:id", "editor_owner_operation"); return Response.json({ error: "Only the owner can change sharing or archive this plan" }, { status: 403 }); }
     if (Number(current.version) !== input.expectedVersion) return Response.json({ error: "This plan changed elsewhere. Reload before saving.", currentVersion: current.version }, { status: 409 });
     const version = Number(current.version) + 1; const now = new Date().toISOString(); const name = input.name ?? String(current.name); const description = input.description ?? String(current.description); const payload = JSON.stringify(input.payload ?? JSON.parse(String(current.payload_json))); const visibility = input.visibility ?? String(current.visibility); const archived = input.archived === undefined ? Number(current.archived) : Number(input.archived); const slug = visibility === "public" ? String(current.public_slug ?? publicSlug()) : null;
+    const recipients = new Set((await context.db.prepare("SELECT lower(email) AS email FROM workspace_plan_members WHERE plan_id = ? AND lower(email) != lower(?)").bind(id, context.user.email).all<{ email: string }>()).results.map(({ email }) => email));
+    if (current.owner_email && String(current.owner_email).toLowerCase() !== context.user.email.toLowerCase()) recipients.add(String(current.owner_email).toLowerCase());
     const results = await context.db.batch([
       context.db.prepare("UPDATE workspace_plans SET name = ?, description = ?, payload_json = ?, visibility = ?, public_slug = ?, archived = ?, version = ?, updated_at = ? WHERE id = ? AND version = ?").bind(name, description, payload, visibility, slug, archived, version, now, id, input.expectedVersion),
       context.db.prepare("INSERT INTO workspace_plan_versions (plan_id, version, name, description, payload_json, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(id, version, name, description, payload, now),
       activity(context.db, id, context.user, "updated", `Saved version ${version}`),
+      ...Array.from(recipients, (email) => notificationJob(context.db, { type: "workspace_updated", recipientEmail: email, actorEmail: context.user.email, title: `${name} was updated`, body: `${context.user.displayName} saved version ${version}.`, href: "/workspace", dedupeKey: `update:${id}:${version}:${email}` })),
     ]);
     if (!results[0].meta.changes) return Response.json({ error: "This plan changed elsewhere. Reload before saving." }, { status: 409 });
     return Response.json({ plan: { ...parsePlan(current), name, description, payload: JSON.parse(payload), visibility, public_slug: slug, archived: Boolean(archived), version, version_count: Number(current.version) + 1, updated_at: now } });

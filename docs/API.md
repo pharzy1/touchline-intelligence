@@ -59,6 +59,8 @@ Matches include a 0–100 similarity score and the three closest shared feature 
 
 `GET /api/operations` is restricted to authenticated emails configured in `OPS_ADMIN_EMAILS`. It returns aggregated route latency, application-error fingerprints, security denials, durable rate-limit pressure, scheduled-sync health, alerts, and product record counts. Raw IP addresses and request payloads are never returned or persisted.
 
+`GET`, `PATCH`, and `DELETE /api/notifications` require ChatGPT authentication and scope all rows to the signed-in email. The API returns the inbox and queue summary, marks one or all notifications read, updates collaboration/weekly preferences, and deletes individual notifications. Delivery jobs are processed asynchronously with idempotency keys, expiring leases, bounded retries, and dead-letter capture.
+
 The response also reports the four largest model factors and which side each factor favours.
 
 ## Production status

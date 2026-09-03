@@ -23,7 +23,7 @@ export async function POST(request: Request) {
   try {
     const input = createPlanSchema.parse(await request.json()); const id = crypto.randomUUID(); const now = new Date().toISOString(); const payload = JSON.stringify(input.payload);
     await context.db.batch([
-      context.db.prepare("INSERT INTO workspace_plans (id, owner_id, kind, name, description, payload_json, visibility, public_slug, archived, version, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, 'private', NULL, 0, 1, ?, ?)").bind(id, context.user.userId, input.kind, input.name, input.description, payload, now, now),
+      context.db.prepare("INSERT INTO workspace_plans (id, owner_id, owner_email, kind, name, description, payload_json, visibility, public_slug, archived, version, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'private', NULL, 0, 1, ?, ?)").bind(id, context.user.userId, context.user.email, input.kind, input.name, input.description, payload, now, now),
       context.db.prepare("INSERT INTO workspace_plan_versions (plan_id, version, name, description, payload_json, created_at) VALUES (?, 1, ?, ?, ?, ?)").bind(id, input.name, input.description, payload, now),
       activity(context.db, id, context.user, "created", input.name),
     ]);
