@@ -53,6 +53,8 @@ Matches include a 0–100 similarity score and the three closest shared feature 
 
 `GET /api/status` returns safe production telemetry plus the promoted player-data refresh report: source freshness, season, coverage, detected transfer/value/performance changes, and every validation gate. Raw provider failures remain restricted to protected diagnostics.
 
+`GET /api/player-history?ids=:playerId[,playerId]` returns up to three versioned, position-specific valuation trajectories with season-level bootstrap intervals and evidence-quality labels. Missing seasons are preserved as missing evidence rather than interpolated.
+
 `GET` and `POST /api/workspace/plans`, plus `GET`, `PATCH`, and `DELETE /api/workspace/plans/:id`, require ChatGPT authentication. Every query is scoped to the authenticated user. Updates include `expectedVersion` and return `409` instead of overwriting a newer edit. New plans are private; owners may explicitly create or revoke a read-only `/shared/:slug` snapshot.
 
 `GET`, `POST`, and `DELETE /api/workspace/plans/:id/collaboration` expose the room roster, comments, and activity ledger. Owners grant or revoke editor/viewer access by email; editors may update versioned plan content, viewers remain read-only, and every access decision is rechecked by the server.

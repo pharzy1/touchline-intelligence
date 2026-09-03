@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/pharzy1/touchline-intelligence/actions/workflows/ci.yml/badge.svg)](https://github.com/pharzy1/touchline-intelligence/actions/workflows/ci.yml)
 ![Integration tests](https://img.shields.io/badge/integration-20%20passing-18a558)
-![E2E flows](https://img.shields.io/badge/Playwright-12%20golden%20paths-2eAD33)
+![E2E flows](https://img.shields.io/badge/Playwright-13%20golden%20paths-2eAD33)
 
 An end-to-end Premier League analytics platform that turns historical football data into an integrated suite for squad planning, player valuation, similarity scouting, transfer analysis, and calibrated match forecasting.
 
@@ -141,15 +141,16 @@ docs/       architecture, API, and portfolio material
 - Shareable valuation URLs, explicit match baselines, and D1 request instrumentation
 - Six-hour fixture sync, immutable pre-kickoff predictions, post-match grading, and a public accountability curve
 - Pipeline-time Wikimedia Commons enrichment with local caching, artifact validation, attribution UI, and position-based fallback avatars
-- Zod validation, typed API errors, structured logs, rate limiting, error recovery, and twelve Playwright E2E flows
+- Zod validation, typed API errors, structured logs, rate limiting, error recovery, and thirteen Playwright E2E flows
 - Interactive 23-player squad planning across three formations with depth/risk diagnostics, affordability-constrained replacements, before/after analysis, transfer accounting, shareable state, and versioned local plan storage
 - Weekly governed retraining with challenger comparison, feature/prediction drift gates, pull-request promotion, and Git-backed rollback
 - Weekly source ingestion with SHA-256 provenance, schema and change-rate guardrails, transfer/value/performance change ledgers, shared freshness indicators, and reviewed promotion
 - ChatGPT-authenticated D1 workspaces with ownership-scoped APIs, optimistic concurrency, immutable plan history, archive/duplicate/restore operations, and revocable public snapshots
+- Position-specific valuation models with per-role cross-validation and challenger metrics, season-level bootstrap intervals, evidence-quality warnings, and shareable multi-player trajectory comparisons
 
 ## Roadmap
 
-- Season-over-season valuation trends and position-specific valuation models
+- Production feedback funnels connecting anonymous feature usage to saved decision workflows
 
 ## License and attribution
 

@@ -98,6 +98,16 @@ test("model registry exposes challenger evidence and promotion gates", async ({ 
   await expect(page.getByText("Ridge regression")).toBeVisible();
   await expect(page.getByText("Every gate must pass.")).toBeVisible();
   await expect(page.getByText("Prediction drift", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("Different roles. Separate evidence.")).toBeVisible();
+});
+
+test("valuation trends compare role-specific histories", async ({ page }) => {
+  await page.goto("/trends?players=433177,583255");
+  await expect(page.getByText("Follow the signal.")).toBeVisible();
+  await expect(page.getByText("Comparable shape.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Bukayo Saka" }).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Antoine Semenyo" }).first()).toBeVisible();
+  await expect(page.getByText("80% interval").first()).toBeVisible();
 });
 
 test("player profile connects history to transfer decisions", async ({ page }) => {

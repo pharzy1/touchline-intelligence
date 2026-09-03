@@ -19,6 +19,15 @@ assert.equal(valuation.features.length, valuation.coefficients.length);
 assert.ok(valuation.metrics.records >= 400);
 assert.ok(valuation.metrics.r2 > 0 && valuation.metrics.r2 <= 1);
 assert.ok(valuation.metrics.mae_eur > 0);
+assert.deepEqual(Object.keys(valuation.position_models).sort(), ["Attack", "Defender", "Goalkeeper", "Midfield"]);
+for (const positionModel of Object.values(valuation.position_models)) {
+  assert.ok(positionModel.records >= 30);
+  assert.equal(positionModel.features.length, positionModel.mean.length);
+  assert.equal(positionModel.features.length, positionModel.scale.length);
+  assert.equal(positionModel.features.length, positionModel.coefficients.length);
+  assert.equal(positionModel.prediction_interval.intercepts.length, positionModel.prediction_interval.coefficients.length);
+  assert.ok(positionModel.metrics.cross_validation.folds >= 4);
+}
 
 assert.match(scouting.version, /^scouting-/);
 assert.equal(scouting.players.length, valuation.metrics.records);
@@ -45,7 +54,7 @@ for (const [playerId, photo] of Object.entries(images.players)) {
 assert.match(histories.version, /^player-history-/);
 assert.equal(histories.model_version, valuation.version);
 assert.equal(histories.players.length, scouting.players.length);
-assert.ok(histories.players.every((player) => player.points.length > 0 && player.points.every((point) => point.estimate_eur > 0 && point.peer_median_eur > 0)));
+assert.ok(histories.players.every((player) => player.points.length > 0 && player.points.every((point) => point.estimate_eur > 0 && point.low_eur > 0 && point.low_eur <= point.estimate_eur && point.high_eur >= point.estimate_eur && point.peer_median_eur > 0 && ["limited", "moderate", "strong"].includes(point.evidence_quality))));
 assert.equal(report.schemaVersion, 1);
 assert.equal(report.productionVersion, valuation.version);
 assert.ok(report.gates.length >= 5 && report.gates.every((gate) => typeof gate.passed === "boolean"));

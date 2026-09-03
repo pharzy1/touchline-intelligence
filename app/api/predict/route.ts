@@ -37,14 +37,16 @@ function predict(input: Input) {
     is_defender: position === "Defender" ? 1 : 0,
     is_goalkeeper: position === "Goalkeeper" ? 1 : 0,
   };
-  let logValue = model.intercept;
-  const logContributions = model.features.map((feature, index) => ({ feature, impact: ((values[feature] - model.mean[index]) / model.scale[index]) * model.coefficients[index] }));
+  const positionModels = model.position_models as Record<string, typeof model> | undefined;
+  const serving = positionModels?.[position] ?? model;
+  let logValue = serving.intercept;
+  const logContributions = serving.features.map((feature, index) => ({ feature, impact: ((values[feature] - serving.mean[index]) / serving.scale[index]) * serving.coefficients[index] }));
   logContributions.forEach(({ impact }) => { logValue += impact; });
   const estimate = Math.max(250_000, Math.expm1(logValue));
-  const samples = model.prediction_interval.coefficients.map((coefficients, sampleIndex) => Math.max(250_000, Math.expm1(model.prediction_interval.intercepts[sampleIndex] + coefficients.reduce((sum, coefficient, index) => sum + coefficient * ((values[model.features[index]] - model.mean[index]) / model.scale[index]), 0)))).sort((a, b) => a - b);
+  const samples = serving.prediction_interval.coefficients.map((coefficients, sampleIndex) => Math.max(250_000, Math.expm1(serving.prediction_interval.intercepts[sampleIndex] + coefficients.reduce((sum, coefficient, index) => sum + coefficient * ((values[serving.features[index]] - serving.mean[index]) / serving.scale[index]), 0)))).sort((a, b) => a - b);
   const labels: Record<string, string> = { age: "Age", appearances: "Availability", goals: "Goals", assists: "Assists", goals_per_90: "Goals / 90", assists_per_90: "Assists / 90", international_caps: "International caps", is_forward: "Forward role", is_midfielder: "Midfield role", is_defender: "Defender role", is_goalkeeper: "Goalkeeper role" };
   const contributions = logContributions.map(({ feature, impact }) => ({ feature, label: labels[feature] ?? feature, impactEur: Math.round(estimate * (Math.exp(impact) - 1)), direction: impact >= 0 ? "up" : "down" })).sort((a, b) => Math.abs(b.impactEur) - Math.abs(a.impactEur)).slice(0, 5);
-  return { estimateEur: Math.round(estimate), lowEur: Math.round(samples[Math.floor(samples.length * .1)]), highEur: Math.round(samples[Math.floor(samples.length * .9)]), intervalMethod: model.prediction_interval.method, contributions, values };
+  return { estimateEur: Math.round(estimate), lowEur: Math.round(samples[Math.floor(samples.length * .1)]), highEur: Math.round(samples[Math.floor(samples.length * .9)]), intervalMethod: serving.prediction_interval.method, modelScope: positionModels?.[position] ? `position:${position}` : "global", contributions, values };
 }
 
 async function persistPrediction(input: Input, estimateEur: number) {
@@ -65,7 +67,8 @@ async function persistPrediction(input: Input, estimateEur: number) {
 }
 
 export async function GET() {
-  return Response.json({ version: model.version, season: model.season, algorithm: model.algorithm, metrics: model.metrics, source: model.source, features: model.features });
+  const positionModels = model.position_models as Record<string, { records: number; metrics: unknown }> | undefined;
+  return Response.json({ version: model.version, season: model.season, algorithm: model.algorithm, metrics: model.metrics, source: model.source, features: model.features, positionModels: positionModels ? Object.fromEntries(Object.entries(positionModels).map(([position, value]) => [position, { records: value.records, metrics: value.metrics }])) : {} });
 }
 
 export async function POST(request: Request) {

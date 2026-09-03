@@ -51,6 +51,13 @@ test("renders the shareable player comparison workspace", async () => {
   assert.equal(response.status, 200); assert.match(html, /Player Comparison — Touchline/); assert.match(html, /See the trade-offs/); assert.match(html, /Player comparison workspace/);
 });
 
+test("renders and serves position-specific valuation trajectories", async () => {
+  const response = await render("/trends?players=433177,583255"); const html = await response.text();
+  assert.equal(response.status, 200); assert.match(html, /Valuation Trends — Touchline/); assert.match(html, /Follow the signal/); assert.match(html, /HISTORICAL VALUATION/);
+  const api = await requestWorker(new Request("http://localhost/api/player-history?ids=433177,583255")); const data = await api.json();
+  assert.equal(api.status, 200); assert.equal(data.players.length, 2); assert.ok(data.players.every((player) => player.points.every((point) => point.low_eur <= point.estimate_eur && point.high_eur >= point.estimate_eur)));
+});
+
 test("renders the shareable squad planning workspace", async () => {
   const response = await render("/squad-planner"); const html = await response.text();
   assert.equal(response.status, 200); assert.match(html, /Squad Planner — Touchline/); assert.match(html, /Build the XI/); assert.match(html, /SQUAD DIAGNOSIS/); assert.match(html, /MODEL-BACKED ALTERNATIVES/); assert.match(html, /SQUAD DEPTH/); assert.match(html, /BEFORE VS AFTER/); assert.match(html, /SAVED PLANS/);
@@ -118,6 +125,7 @@ test("serves a versioned trained-model prediction", async () => {
   assert.equal(prediction.currency, "EUR");
   assert.ok(prediction.estimateEur > 1_000_000);
   assert.ok(prediction.lowEur < prediction.estimateEur);
+  assert.equal(prediction.modelScope, "position:Attack");
   assert.ok(prediction.highEur > prediction.estimateEur);
   assert.equal(prediction.metrics.records, 414);
 });

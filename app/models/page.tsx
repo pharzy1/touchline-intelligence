@@ -40,8 +40,13 @@ export default function ModelsPage() {
           <div><strong>Gradient-boosted trees</strong><strong>{comparison.gradientBoostedTrees.r2.toFixed(3)}</strong><strong>{money(comparison.gradientBoostedTrees.mae_eur)}</strong><em>CHALLENGER</em></div>
         </div>
       </section>
+      <section className="gate-panel position-model-panel">
+        <div className="section-index">02 / POSITION MODELS</div><h2>Different roles. Separate evidence.</h2>
+        <p className="position-model-copy">Touchline fits and cross-validates an independent ridge model for each role. Small cohorts and weak scores remain visible rather than being hidden behind the global metric.</p>
+        <div className="position-model-grid">{Object.entries(model.position_models).map(([position, positionModel]) => <article key={position}><span>{position === "Attack" ? "FORWARD" : position.toUpperCase()}</span><strong>{positionModel.metrics.cross_validation.r2_mean.toFixed(3)}</strong><small>mean CV R² · {positionModel.records} records</small><div><b>Ridge MAE</b><em>{money(positionModel.metrics.model_comparison.ridge.mae_eur)}</em></div><div><b>Tree MAE</b><em>{money(positionModel.metrics.model_comparison.gradient_boosted_trees.mae_eur)}</em></div></article>)}</div>
+      </section>
       <section className="gate-panel">
-        <div className="section-index">02 / PROMOTION CONTRACT</div><h2>Every gate must pass.</h2>
+        <div className="section-index">03 / PROMOTION CONTRACT</div><h2>Every gate must pass.</h2>
         <div className="gate-grid">{report.gates.map((gate) => <article key={gate.name}><i className={gate.passed ? "passed" : "failed"}>{gate.passed ? "✓" : "!"}</i><div><strong>{gate.name}</strong><p>{gate.detail}</p></div></article>)}</div>
       </section>
       <section className="drift-panel">

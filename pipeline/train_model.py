@@ -32,6 +32,7 @@ FEATURES = [
     "is_forward", "is_midfielder", "is_defender", "is_goalkeeper",
 ]
 SCOUT_FEATURES = ["age", "appearances", "goals_per_90", "assists_per_90", "minutes_per_appearance", "international_caps"]
+POSITION_FEATURES = FEATURES[:8]
 
 
 def ridge_fit(X: np.ndarray, y: np.ndarray, train_idx: np.ndarray):
@@ -55,6 +56,57 @@ def regression_metrics(predicted: np.ndarray, actual: np.ndarray):
     return {
         "mae_eur": float(np.mean(np.abs(predicted - actual))),
         "r2": float(1 - np.sum((actual - predicted) ** 2) / np.sum((actual - actual.mean()) ** 2)),
+    }
+
+
+def train_position_model(records, position: str):
+    """Fit an independently evaluated, explainable model for one playing role."""
+    position_indices = np.array([index for index, row in enumerate(records) if row["position"] == position])
+    position_X = np.array([[records[index][name] for name in POSITION_FEATURES] for index in position_indices], dtype=float)
+    position_y_eur = np.array([records[index]["market_value_eur"] for index in position_indices], dtype=float)
+    position_y = np.log1p(position_y_eur)
+    rng = np.random.default_rng(42)
+    shuffled = rng.permutation(len(position_indices))
+    split = max(1, min(len(shuffled) - 1, int(len(shuffled) * .8)))
+    train_idx, test_idx = shuffled[:split], shuffled[split:]
+    mean, scale, weights = ridge_fit(position_X, position_y, train_idx)
+    predicted = ridge_predict(position_X, mean, scale, weights, test_idx)
+    metrics = regression_metrics(predicted, position_y_eur[test_idx])
+
+    fold_count = min(5, len(shuffled))
+    folds = np.array_split(shuffled, fold_count)
+    cv = []
+    for fold_index, fold in enumerate(folds):
+        fold_train = np.concatenate([part for index, part in enumerate(folds) if index != fold_index])
+        fold_mean, fold_scale, fold_weights = ridge_fit(position_X, position_y, fold_train)
+        cv.append(regression_metrics(ridge_predict(position_X, fold_mean, fold_scale, fold_weights, fold), position_y_eur[fold]))
+
+    boosted = GradientBoostingRegressor(random_state=42, n_estimators=140, learning_rate=.04, max_depth=2, loss="huber")
+    boosted.fit(position_X[train_idx], position_y[train_idx])
+    boosted_metrics = regression_metrics(np.maximum(np.expm1(boosted.predict(position_X[test_idx])), 0), position_y_eur[test_idx])
+
+    bootstrap_rng = np.random.default_rng(2026)
+    bootstrap_intercepts, bootstrap_coefficients = [], []
+    standardized = (position_X - mean) / scale
+    for _ in range(80):
+        sample = bootstrap_rng.choice(train_idx, size=len(train_idx), replace=True)
+        design = np.column_stack([np.ones(len(sample)), standardized[sample]])
+        penalty = np.eye(design.shape[1]) * 1.5; penalty[0, 0] = 0
+        sample_weights = np.linalg.solve(design.T @ design + penalty, design.T @ position_y[sample])
+        bootstrap_intercepts.append(round(float(sample_weights[0]), 10))
+        bootstrap_coefficients.append(sample_weights[1:].round(10).tolist())
+
+    return {
+        "features": POSITION_FEATURES,
+        "records": len(position_indices),
+        "mean": mean.round(8).tolist(), "scale": scale.round(8).tolist(),
+        "intercept": float(weights[0]), "coefficients": weights[1:].round(10).tolist(),
+        "prediction_interval": {"method": "seeded_bootstrap_percentile_80", "seed": 2026, "samples": 80, "intercepts": bootstrap_intercepts, "coefficients": bootstrap_coefficients},
+        "metrics": {
+            "test_records": len(test_idx), "r2": round(metrics["r2"], 4), "mae_eur": round(metrics["mae_eur"]),
+            "cross_validation": {"folds": fold_count, "r2_mean": round(float(np.mean([item["r2"] for item in cv])), 4), "r2_std": round(float(np.std([item["r2"] for item in cv])), 4), "mae_eur_mean": round(float(np.mean([item["mae_eur"] for item in cv])))},
+            "model_comparison": {"ridge": {"r2": round(metrics["r2"], 4), "mae_eur": round(metrics["mae_eur"])}, "gradient_boosted_trees": {"r2": round(boosted_metrics["r2"], 4), "mae_eur": round(boosted_metrics["mae_eur"])}, "serving_choice": "ridge", "reason": "Role-specific ridge keeps every estimate inspectable while the tree remains an evaluated challenger."},
+        },
     }
 
 
@@ -161,6 +213,7 @@ def main() -> None:
     boosted.fit(X[train_idx], y[train_idx])
     boosted_prediction = np.maximum(np.expm1(boosted.predict(X[test_idx])), 0)
     boosted_metrics = regression_metrics(boosted_prediction, actual)
+    position_models = {position: train_position_model(records, position) for position in ["Goalkeeper", "Defender", "Midfield", "Attack"]}
 
     bootstrap_rng = np.random.default_rng(2026)
     bootstrap_intercepts = []
@@ -196,6 +249,7 @@ def main() -> None:
             "intercepts": bootstrap_intercepts,
             "coefficients": bootstrap_coefficients,
         },
+        "position_models": position_models,
         "metrics": {
             "records": len(records),
             "train_records": len(train_idx),

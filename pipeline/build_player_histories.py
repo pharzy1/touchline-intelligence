@@ -25,14 +25,22 @@ def age_on(birth, when):
     born = datetime.fromisoformat(birth).date()
     return when.year - born.year - ((when.month, when.day) < (born.month, born.day))
 
-def predict(model, values):
-    score = model["intercept"]
+def predict(model, values, position):
+    serving = model.get("position_models", {}).get(position, model)
+    score = serving["intercept"]
     contributions = {}
-    for index, feature in enumerate(model["features"]):
-        term = ((values[feature] - model["mean"][index]) / model["scale"][index]) * model["coefficients"][index]
+    for index, feature in enumerate(serving["features"]):
+        term = ((values[feature] - serving["mean"][index]) / serving["scale"][index]) * serving["coefficients"][index]
         score += term
         contributions[feature] = term
-    return max(round(math.expm1(score)), 0), contributions
+    estimate = max(round(math.expm1(score)), 0)
+    samples = []
+    interval = serving.get("prediction_interval", model["prediction_interval"])
+    for intercept, coefficients in zip(interval["intercepts"], interval["coefficients"]):
+        bootstrap_score = intercept + sum(((values[feature] - serving["mean"][index]) / serving["scale"][index]) * coefficients[index] for index, feature in enumerate(serving["features"]))
+        samples.append(max(round(math.expm1(bootstrap_score)), 0))
+    samples.sort()
+    return estimate, samples[len(samples) // 10], samples[min(len(samples) - 1, len(samples) * 9 // 10)], contributions
 
 def main():
     model = json.loads((DATA / "valuation-model.json").read_text())
@@ -82,8 +90,9 @@ def main():
                 "is_defender": int(player["position"] == "Defender"),
                 "is_goalkeeper": int(player["position"] == "Goalkeeper"),
             }
-            estimate, contributions = predict(model, values)
-            point = {"season": season, "estimate_eur": estimate, **{key: round(value, 4) if isinstance(value, float) else value for key, value in values.items() if key in ["age", "appearances", "goals", "assists", "minutes", "goals_per_90", "assists_per_90"]}, "contributions": contributions}
+            estimate, low, high, contributions = predict(model, values, player["position"])
+            evidence = "limited" if stats["minutes"] < 450 or stats["appearances"] < 6 else "strong" if stats["minutes"] >= 1350 and stats["appearances"] >= 18 else "moderate"
+            point = {"season": season, "estimate_eur": estimate, "low_eur": low, "high_eur": high, "evidence_quality": evidence, **{key: round(value, 4) if isinstance(value, float) else value for key, value in values.items() if key in ["age", "appearances", "goals", "assists", "minutes", "goals_per_90", "assists_per_90"]}, "contributions": contributions}
             points.append(point); by_position_season[(player["position"], season)].append(estimate)
         if points:
             histories.append({"player_id": int(player_id), "name": player["name"], "club": player["club"], "position": player["position"], "latest_recorded_value_eur": player["market_value_eur"], "points": points})
@@ -102,7 +111,7 @@ def main():
             previous = point
         for point in history["points"]: del point["contributions"]
 
-    artifact = {"version": f"player-history-{model['version']}", "created_at": datetime.now(timezone.utc).isoformat(), "model_version": model["version"], "seasons": SEASONS, "methodology": "Season-level performance is passed through the deployed valuation model. Only the latest recorded market value is available in the source snapshot.", "players": histories}
+    artifact = {"version": f"player-history-{model['version']}", "created_at": datetime.now(timezone.utc).isoformat(), "model_version": model["version"], "seasons": SEASONS, "methodology": "Season-level performance is passed through independently evaluated position-specific ridge models with bootstrap uncertainty. Only the latest recorded market value is available in the source snapshot.", "players": histories}
     (DATA / "player-histories.json").write_text(json.dumps(artifact, ensure_ascii=False, indent=2) + "\n")
     print(f"Built {len(histories)} player histories with {sum(len(row['points']) for row in histories)} season points")
 
