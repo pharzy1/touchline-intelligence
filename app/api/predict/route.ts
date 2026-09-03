@@ -38,7 +38,8 @@ function predict(input: Input) {
     is_goalkeeper: position === "Goalkeeper" ? 1 : 0,
   };
   const positionModels = model.position_models as Record<string, typeof model> | undefined;
-  const serving = positionModels?.[position] ?? model;
+  const candidate = positionModels?.[position];
+  const serving = candidate?.promotion?.eligible ? candidate : model;
   let logValue = serving.intercept;
   const logContributions = serving.features.map((feature, index) => ({ feature, impact: ((values[feature] - serving.mean[index]) / serving.scale[index]) * serving.coefficients[index] }));
   logContributions.forEach(({ impact }) => { logValue += impact; });
@@ -46,7 +47,8 @@ function predict(input: Input) {
   const samples = serving.prediction_interval.coefficients.map((coefficients, sampleIndex) => Math.max(250_000, Math.expm1(serving.prediction_interval.intercepts[sampleIndex] + coefficients.reduce((sum, coefficient, index) => sum + coefficient * ((values[serving.features[index]] - serving.mean[index]) / serving.scale[index]), 0)))).sort((a, b) => a - b);
   const labels: Record<string, string> = { age: "Age", appearances: "Availability", goals: "Goals", assists: "Assists", goals_per_90: "Goals / 90", assists_per_90: "Assists / 90", international_caps: "International caps", is_forward: "Forward role", is_midfielder: "Midfield role", is_defender: "Defender role", is_goalkeeper: "Goalkeeper role" };
   const contributions = logContributions.map(({ feature, impact }) => ({ feature, label: labels[feature] ?? feature, impactEur: Math.round(estimate * (Math.exp(impact) - 1)), direction: impact >= 0 ? "up" : "down" })).sort((a, b) => Math.abs(b.impactEur) - Math.abs(a.impactEur)).slice(0, 5);
-  return { estimateEur: Math.round(estimate), lowEur: Math.round(samples[Math.floor(samples.length * .1)]), highEur: Math.round(samples[Math.floor(samples.length * .9)]), intervalMethod: serving.prediction_interval.method, modelScope: positionModels?.[position] ? `position:${position}` : "global", contributions, values };
+  const low = Math.min(samples[Math.floor(samples.length * .1)], estimate * (1 - serving.uncertainty_ratio)); const high = Math.max(samples[Math.floor(samples.length * .9)], estimate * (1 + serving.uncertainty_ratio));
+  return { estimateEur: Math.round(estimate), lowEur: Math.max(250_000, Math.round(low)), highEur: Math.round(high), intervalMethod: `${serving.prediction_interval.method}_plus_training_residual`, modelScope: candidate?.promotion?.eligible ? `position:${position}` : "global:fallback", promotion: candidate?.promotion ?? null, contributions, values };
 }
 
 async function persistPrediction(input: Input, estimateEur: number) {

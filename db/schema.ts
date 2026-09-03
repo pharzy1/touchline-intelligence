@@ -202,6 +202,24 @@ export const notificationPreferences = sqliteTable("notification_preferences", {
   updatedAt: text("updated_at").notNull(),
 });
 
+export const productEvents = sqliteTable("product_events", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  journeyHash: text("journey_hash").notNull(),
+  event: text("event").notNull(),
+  sourcePath: text("source_path").notNull(),
+  createdAt: text("created_at").notNull(),
+}, (table) => [index("idx_product_events_event_created").on(table.event, table.createdAt), index("idx_product_events_journey_created").on(table.journeyHash, table.createdAt)]);
+
+export const betaFeedback = sqliteTable("beta_feedback", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  journeyHash: text("journey_hash").notNull(),
+  category: text("category").notNull(),
+  rating: integer("rating").notNull(),
+  message: text("message").notNull(),
+  sourcePath: text("source_path").notNull(),
+  createdAt: text("created_at").notNull(),
+}, (table) => [index("idx_beta_feedback_created").on(table.createdAt), index("idx_beta_feedback_category_created").on(table.category, table.createdAt)]);
+
 export const notificationJobs = sqliteTable("notification_jobs", {
   id: text("id").primaryKey(),
   type: text("type").notNull(),

@@ -57,6 +57,13 @@
       "when": 1788427101421,
       "tag": "0007_puzzling_lady_mastermind",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1788476056336,
+      "tag": "0008_last_blockbuster",
+      "breakpoints": true
     }
   ]
 }

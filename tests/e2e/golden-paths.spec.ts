@@ -110,6 +110,14 @@ test("valuation trends compare role-specific histories", async ({ page }) => {
   await expect(page.getByText("80% interval").first()).toBeVisible();
 });
 
+test("beta feedback exposes real tasks and an accessible form", async ({ page }) => {
+  await page.goto("/feedback");
+  await expect(page.getByText("Test the decision.")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Start task →" }).first()).toBeVisible();
+  await expect(page.getByLabel("What happened?")).toBeVisible();
+  await expect(page.getByRole("button", { name: "SUBMIT ANONYMOUS FEEDBACK" })).toBeVisible();
+});
+
 test("player profile connects history to transfer decisions", async ({ page }) => {
   await page.goto("/players/433177");
   await expect(page.getByText("Bukayo Saka", { exact: true })).toBeVisible();

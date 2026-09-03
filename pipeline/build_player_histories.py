@@ -26,7 +26,8 @@ def age_on(birth, when):
     return when.year - born.year - ((when.month, when.day) < (born.month, born.day))
 
 def predict(model, values, position):
-    serving = model.get("position_models", {}).get(position, model)
+    candidate = model.get("position_models", {}).get(position)
+    serving = candidate if candidate and candidate.get("promotion", {}).get("eligible") else model
     score = serving["intercept"]
     contributions = {}
     for index, feature in enumerate(serving["features"]):
@@ -40,7 +41,9 @@ def predict(model, values, position):
         bootstrap_score = intercept + sum(((values[feature] - serving["mean"][index]) / serving["scale"][index]) * coefficients[index] for index, feature in enumerate(serving["features"]))
         samples.append(max(round(math.expm1(bootstrap_score)), 0))
     samples.sort()
-    return estimate, samples[len(samples) // 10], samples[min(len(samples) - 1, len(samples) * 9 // 10)], contributions
+    low = min(samples[len(samples) // 10], round(estimate * (1 - serving["uncertainty_ratio"])))
+    high = max(samples[min(len(samples) - 1, len(samples) * 9 // 10)], round(estimate * (1 + serving["uncertainty_ratio"])))
+    return estimate, max(250000, low), high, contributions
 
 def main():
     model = json.loads((DATA / "valuation-model.json").read_text())

@@ -27,6 +27,8 @@ for (const positionModel of Object.values(valuation.position_models)) {
   assert.equal(positionModel.features.length, positionModel.coefficients.length);
   assert.equal(positionModel.prediction_interval.intercepts.length, positionModel.prediction_interval.coefficients.length);
   assert.ok(positionModel.metrics.cross_validation.folds >= 4);
+  assert.equal(positionModel.promotion.serving_choice, positionModel.promotion.eligible ? "position" : "global");
+  assert.equal(typeof positionModel.promotion.observed_cv_r2_margin, "number");
 }
 
 assert.match(scouting.version, /^scouting-/);

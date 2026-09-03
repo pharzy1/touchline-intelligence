@@ -1,6 +1,6 @@
 {
   "version": "valuation-ridge-auto-33681984060",
-  "trained_at": "2026-09-03T22:36:37.416992+00:00",
+  "trained_at": "2026-09-03T22:56:54.600919+00:00",
   "competition": "GB1",
   "season": 2025,
   "currency": "EUR",
@@ -63,7 +63,7 @@
     -0.0064745976,
     -0.0508329225
   ],
-  "uncertainty_ratio": 0.4984076256170191,
+  "uncertainty_ratio": 0.7663414323779077,
   "prediction_interval": {
     "method": "seeded_bootstrap_percentile_80",
     "seed": 2026,
@@ -1917,6 +1917,7 @@
         -0.0196086651,
         0.1624544353
       ],
+      "uncertainty_ratio": 0.8434524037162356,
       "prediction_interval": {
         "method": "seeded_bootstrap_percentile_80",
         "seed": 2026,
@@ -2810,6 +2811,7 @@
         "test_records": 7,
         "r2": 0.0461,
         "mae_eur": 5803776,
+        "interval_coverage_80": 0.5714,
         "cross_validation": {
           "folds": 5,
           "r2_mean": 0.3672,
@@ -2828,6 +2830,15 @@
           "serving_choice": "ridge",
           "reason": "Role-specific ridge keeps every estimate inspectable while the tree remains an evaluated challenger."
         }
+      },
+      "promotion": {
+        "eligible": false,
+        "serving_choice": "global",
+        "minimum_records": 50,
+        "required_cv_r2_margin": 0.02,
+        "required_interval_coverage_80": 0.7,
+        "observed_cv_r2_margin": -0.033,
+        "reason": "Global model retained because the position model did not clear every promotion gate."
       }
     },
     "Defender": {
@@ -2873,6 +2884,7 @@
         0.0076249877,
         0.2237585338
       ],
+      "uncertainty_ratio": 0.7834515173269044,
       "prediction_interval": {
         "method": "seeded_bootstrap_percentile_80",
         "seed": 2026,
@@ -3766,6 +3778,7 @@
         "test_records": 30,
         "r2": 0.2594,
         "mae_eur": 8971441,
+        "interval_coverage_80": 0.8333,
         "cross_validation": {
           "folds": 5,
           "r2_mean": 0.1595,
@@ -3784,6 +3797,15 @@
           "serving_choice": "ridge",
           "reason": "Role-specific ridge keeps every estimate inspectable while the tree remains an evaluated challenger."
         }
+      },
+      "promotion": {
+        "eligible": false,
+        "serving_choice": "global",
+        "minimum_records": 50,
+        "required_cv_r2_margin": 0.02,
+        "required_interval_coverage_80": 0.7,
+        "observed_cv_r2_margin": -0.2407,
+        "reason": "Global model retained because the position model did not clear every promotion gate."
       }
     },
     "Midfield": {
@@ -3829,6 +3851,7 @@
         0.0193818797,
         0.0299709059
       ],
+      "uncertainty_ratio": 0.7880115544015456,
       "prediction_interval": {
         "method": "seeded_bootstrap_percentile_80",
         "seed": 2026,
@@ -4722,6 +4745,7 @@
         "test_records": 23,
         "r2": 0.1867,
         "mae_eur": 14172983,
+        "interval_coverage_80": 0.8696,
         "cross_validation": {
           "folds": 5,
           "r2_mean": 0.2203,
@@ -4740,6 +4764,15 @@
           "serving_choice": "ridge",
           "reason": "Role-specific ridge keeps every estimate inspectable while the tree remains an evaluated challenger."
         }
+      },
+      "promotion": {
+        "eligible": false,
+        "serving_choice": "global",
+        "minimum_records": 50,
+        "required_cv_r2_margin": 0.02,
+        "required_interval_coverage_80": 0.7,
+        "observed_cv_r2_margin": -0.1799,
+        "reason": "Global model retained because the position model did not clear every promotion gate."
       }
     },
     "Attack": {
@@ -4785,6 +4818,7 @@
         0.1557534435,
         0.0855702941
       ],
+      "uncertainty_ratio": 0.5810402170352499,
       "prediction_interval": {
         "method": "seeded_bootstrap_percentile_80",
         "seed": 2026,
@@ -5678,6 +5712,7 @@
         "test_records": 23,
         "r2": 0.3453,
         "mae_eur": 13810117,
+        "interval_coverage_80": 0.6087,
         "cross_validation": {
           "folds": 5,
           "r2_mean": 0.4908,
@@ -5696,6 +5731,15 @@
           "serving_choice": "ridge",
           "reason": "Role-specific ridge keeps every estimate inspectable while the tree remains an evaluated challenger."
         }
+      },
+      "promotion": {
+        "eligible": false,
+        "serving_choice": "global",
+        "minimum_records": 50,
+        "required_cv_r2_margin": 0.02,
+        "required_interval_coverage_80": 0.7,
+        "observed_cv_r2_margin": 0.0906,
+        "reason": "Global model retained because the position model did not clear every promotion gate."
       }
     }
   },
@@ -5706,6 +5750,7 @@
     "mae_eur": 9905783,
     "r2": 0.6135,
     "median_absolute_percentage_error": 0.3279,
+    "interval_coverage_80": 0.8313,
     "cross_validation": {
       "folds": 5,
       "r2_mean": 0.4002,

@@ -55,6 +55,10 @@ Matches include a 0–100 similarity score and the three closest shared feature 
 
 `GET /api/player-history?ids=:playerId[,playerId]` returns up to three versioned, position-specific valuation trajectories with season-level bootstrap intervals and evidence-quality labels. Missing seasons are preserved as missing evidence rather than interpolated.
 
+`POST /api/events` accepts a constrained product-stage event and a device-generated UUID. The identifier is immediately one-way hashed; only stage, source path, hash, and timestamp are retained for 30 days.
+
+`POST /api/feedback` stores a category, 1–5 usefulness score, bounded message, source path, and hashed journey identifier. It never accepts names or email addresses and feedback expires after 90 days.
+
 `GET` and `POST /api/workspace/plans`, plus `GET`, `PATCH`, and `DELETE /api/workspace/plans/:id`, require ChatGPT authentication. Every query is scoped to the authenticated user. Updates include `expectedVersion` and return `409` instead of overwriting a newer edit. New plans are private; owners may explicitly create or revoke a read-only `/shared/:slug` snapshot.
 
 `GET`, `POST`, and `DELETE /api/workspace/plans/:id/collaboration` expose the room roster, comments, and activity ledger. Owners grant or revoke editor/viewer access by email; editors may update versioned plan content, viewers remain read-only, and every access decision is rechecked by the server.

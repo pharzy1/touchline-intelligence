@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
+import { ProductJourney } from "./product-journey";
 
 export async function generateMetadata(): Promise<Metadata> {
   const incoming = await headers();
@@ -19,5 +20,5 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en"><body>{children}</body></html>;
+  return <html lang="en"><body><a className="skip-link" href="#main-content">Skip to main content</a><ProductJourney /><div id="main-content" tabIndex={-1}>{children}</div></body></html>;
 }

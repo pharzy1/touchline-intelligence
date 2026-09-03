@@ -72,6 +72,8 @@ def train_position_model(records, position: str):
     mean, scale, weights = ridge_fit(position_X, position_y, train_idx)
     predicted = ridge_predict(position_X, mean, scale, weights, test_idx)
     metrics = regression_metrics(predicted, position_y_eur[test_idx])
+    train_prediction = ridge_predict(position_X, mean, scale, weights, train_idx)
+    uncertainty = float(np.clip(np.quantile(np.abs(train_prediction - position_y_eur[train_idx]) / np.maximum(train_prediction, 1), .8), .2, .9))
 
     fold_count = min(5, len(shuffled))
     folds = np.array_split(shuffled, fold_count)
@@ -96,14 +98,23 @@ def train_position_model(records, position: str):
         bootstrap_intercepts.append(round(float(sample_weights[0]), 10))
         bootstrap_coefficients.append(sample_weights[1:].round(10).tolist())
 
+    covered = 0
+    for index in test_idx:
+        sample_predictions = sorted(max(math.expm1(intercept + np.dot(coefficients, standardized[index])), 0) for intercept, coefficients in zip(bootstrap_intercepts, bootstrap_coefficients))
+        center = max(math.expm1(weights[0] + np.dot(weights[1:], standardized[index])), 0)
+        low = min(sample_predictions[len(sample_predictions) // 10], center * (1 - uncertainty)); high = max(sample_predictions[len(sample_predictions) * 9 // 10], center * (1 + uncertainty))
+        if low <= position_y_eur[index] <= high:
+            covered += 1
+
     return {
         "features": POSITION_FEATURES,
         "records": len(position_indices),
         "mean": mean.round(8).tolist(), "scale": scale.round(8).tolist(),
         "intercept": float(weights[0]), "coefficients": weights[1:].round(10).tolist(),
+        "uncertainty_ratio": uncertainty,
         "prediction_interval": {"method": "seeded_bootstrap_percentile_80", "seed": 2026, "samples": 80, "intercepts": bootstrap_intercepts, "coefficients": bootstrap_coefficients},
         "metrics": {
-            "test_records": len(test_idx), "r2": round(metrics["r2"], 4), "mae_eur": round(metrics["mae_eur"]),
+            "test_records": len(test_idx), "r2": round(metrics["r2"], 4), "mae_eur": round(metrics["mae_eur"]), "interval_coverage_80": round(covered / len(test_idx), 4),
             "cross_validation": {"folds": fold_count, "r2_mean": round(float(np.mean([item["r2"] for item in cv])), 4), "r2_std": round(float(np.std([item["r2"] for item in cv])), 4), "mae_eur_mean": round(float(np.mean([item["mae_eur"] for item in cv])))},
             "model_comparison": {"ridge": {"r2": round(metrics["r2"], 4), "mae_eur": round(metrics["mae_eur"])}, "gradient_boosted_trees": {"r2": round(boosted_metrics["r2"], 4), "mae_eur": round(boosted_metrics["mae_eur"])}, "serving_choice": "ridge", "reason": "Role-specific ridge keeps every estimate inspectable while the tree remains an evaluated challenger."},
         },
@@ -197,8 +208,9 @@ def main() -> None:
     mae = float(np.mean(np.abs(predicted - actual)))
     r2 = float(1 - np.sum((actual - predicted) ** 2) / np.sum((actual - actual.mean()) ** 2))
     median_ape = float(np.median(np.abs(predicted - actual) / np.maximum(actual, 1)))
-    residual_ratio = np.abs(predicted - actual) / np.maximum(predicted, 1)
-    uncertainty = float(np.clip(np.quantile(residual_ratio, 0.68), 0.18, 0.75))
+    train_prediction = ridge_predict(X, mean, scale, weights, train_idx)
+    residual_ratio = np.abs(train_prediction - y_eur[train_idx]) / np.maximum(train_prediction, 1)
+    uncertainty = float(np.clip(np.quantile(residual_ratio, .8), .2, .9))
 
     folds = np.array_split(indices, 5)
     cross_validation = []
@@ -214,6 +226,19 @@ def main() -> None:
     boosted_prediction = np.maximum(np.expm1(boosted.predict(X[test_idx])), 0)
     boosted_metrics = regression_metrics(boosted_prediction, actual)
     position_models = {position: train_position_model(records, position) for position in ["Goalkeeper", "Defender", "Midfield", "Attack"]}
+    global_cv_r2 = float(np.mean([item["r2"] for item in cross_validation]))
+    for position, position_model in position_models.items():
+        position_cv = position_model["metrics"]["cross_validation"]
+        eligible = position_model["records"] >= 50 and position_cv["r2_mean"] >= global_cv_r2 + .02 and position_model["metrics"]["interval_coverage_80"] >= .7
+        position_model["promotion"] = {
+            "eligible": eligible,
+            "serving_choice": "position" if eligible else "global",
+            "minimum_records": 50,
+            "required_cv_r2_margin": .02,
+            "required_interval_coverage_80": .7,
+            "observed_cv_r2_margin": round(position_cv["r2_mean"] - global_cv_r2, 4),
+            "reason": "Position model cleared cohort-size, cross-validation improvement, and interval-coverage gates." if eligible else "Global model retained because the position model did not clear every promotion gate.",
+        }
 
     bootstrap_rng = np.random.default_rng(2026)
     bootstrap_intercepts = []
@@ -227,6 +252,14 @@ def main() -> None:
         sample_weights = np.linalg.solve(design.T @ design + penalty, design.T @ y[sample])
         bootstrap_intercepts.append(round(float(sample_weights[0]), 10))
         bootstrap_coefficients.append(sample_weights[1:].round(10).tolist())
+
+    covered = 0
+    for index in test_idx:
+        sample_predictions = sorted(max(math.expm1(intercept + np.dot(coefficients, Xz[index])), 0) for intercept, coefficients in zip(bootstrap_intercepts, bootstrap_coefficients))
+        center = max(math.expm1(weights[0] + np.dot(weights[1:], Xz[index])), 0)
+        low = min(sample_predictions[len(sample_predictions) // 10], center * (1 - uncertainty)); high = max(sample_predictions[len(sample_predictions) * 9 // 10], center * (1 + uncertainty))
+        if low <= y_eur[index] <= high:
+            covered += 1
 
     artifact = {
         "version": MODEL_VERSION,
@@ -257,6 +290,7 @@ def main() -> None:
             "mae_eur": round(mae),
             "r2": round(r2, 4),
             "median_absolute_percentage_error": round(median_ape, 4),
+            "interval_coverage_80": round(covered / len(test_idx), 4),
             "cross_validation": {
                 "folds": 5,
                 "r2_mean": round(float(np.mean([item["r2"] for item in cross_validation])), 4),

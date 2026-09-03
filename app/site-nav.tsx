@@ -1,6 +1,6 @@
 import refresh from "../data/data-refresh-report.json";
 
-type Page = "home" | "valuation" | "scouting" | "compare" | "trends" | "transfers" | "squad-planner" | "matches" | "models" | "status" | "workspace" | "operations" | "notifications";
+type Page = "home" | "valuation" | "scouting" | "compare" | "trends" | "transfers" | "squad-planner" | "matches" | "models" | "status" | "workspace" | "operations" | "notifications" | "feedback";
 
 export function SiteNav({ active }: { active: Page }) {
   return <nav className="nav shell" aria-label="Primary navigation">
@@ -10,6 +10,7 @@ export function SiteNav({ active }: { active: Page }) {
       <a className={active === "scouting" ? "active" : ""} href="/scouting">Scouting</a>
       <a className={active === "compare" ? "active" : ""} href="/compare">Compare</a>
       <a className={active === "trends" ? "active" : ""} href="/trends">Trends</a>
+      <a className={active === "feedback" ? "active" : ""} href="/feedback">Feedback</a>
       <a className={active === "transfers" ? "active" : ""} href="/transfers">Transfers</a>
       <a className={active === "squad-planner" ? "active" : ""} href="/squad-planner">Planner</a>
       <a className={active === "matches" ? "active" : ""} href="/matches">Matches</a>

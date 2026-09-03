@@ -58,6 +58,15 @@ test("renders and serves position-specific valuation trajectories", async () => 
   assert.equal(api.status, 200); assert.equal(data.players.length, 2); assert.ok(data.players.every((player) => player.points.every((point) => point.low_eur <= point.estimate_eur && point.high_eur >= point.estimate_eur)));
 });
 
+test("renders privacy-preserving beta feedback and rejects malformed telemetry", async () => {
+  const page = await render("/feedback"); const html = await page.text();
+  assert.equal(page.status, 200); assert.match(html, /PRODUCT BETA/); assert.match(html, /SUBMIT ANONYMOUS FEEDBACK/); assert.match(html, /Skip to main content/);
+  const event = await requestWorker(new Request("http://localhost/api/events", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ journeyId: "not-a-uuid", event: "secret_event", sourcePath: "/" }) }));
+  assert.equal(event.status, 400); assert.equal((await event.json()).code, "VALIDATION_ERROR");
+  const feedback = await requestWorker(new Request("http://localhost/api/feedback", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ journeyId: crypto.randomUUID(), category: "bug", rating: 6, message: "too short", sourcePath: "/feedback" }) }));
+  assert.equal(feedback.status, 400); assert.equal((await feedback.json()).code, "VALIDATION_ERROR");
+});
+
 test("renders the shareable squad planning workspace", async () => {
   const response = await render("/squad-planner"); const html = await response.text();
   assert.equal(response.status, 200); assert.match(html, /Squad Planner — Touchline/); assert.match(html, /Build the XI/); assert.match(html, /SQUAD DIAGNOSIS/); assert.match(html, /MODEL-BACKED ALTERNATIVES/); assert.match(html, /SQUAD DEPTH/); assert.match(html, /BEFORE VS AFTER/); assert.match(html, /SAVED PLANS/);
@@ -125,9 +134,15 @@ test("serves a versioned trained-model prediction", async () => {
   assert.equal(prediction.currency, "EUR");
   assert.ok(prediction.estimateEur > 1_000_000);
   assert.ok(prediction.lowEur < prediction.estimateEur);
-  assert.equal(prediction.modelScope, "position:Attack");
+  assert.equal(prediction.modelScope, "global:fallback");
+  assert.equal(prediction.promotion.eligible, false);
   assert.ok(prediction.highEur > prediction.estimateEur);
   assert.equal(prediction.metrics.records, 414);
+});
+
+test("falls back to the global valuation model when a role misses promotion gates", async () => {
+  const response = await requestWorker(new Request("http://localhost/api/predict", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ age: 25, position: "Defender", appearances: 30, goals: 2, assists: 2, minutes: 2500, internationalCaps: 8 }) }));
+  const prediction = await response.json(); assert.equal(response.status, 200); assert.equal(prediction.modelScope, "global:fallback"); assert.equal(prediction.promotion.eligible, false);
 });
 
 test("rejects out-of-domain prediction inputs", async () => {

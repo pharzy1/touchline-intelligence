@@ -131,6 +131,8 @@ async function maintainOperations(env: Env) {
   const statements = [
     env.DB.prepare("DELETE FROM rate_limit_windows WHERE julianday(expires_at) < julianday('now')"),
     env.DB.prepare("DELETE FROM api_events WHERE julianday(created_at) < julianday('now', '-30 days')"),
+    env.DB.prepare("DELETE FROM product_events WHERE julianday(created_at) < julianday('now', '-30 days')"),
+    env.DB.prepare("DELETE FROM beta_feedback WHERE julianday(created_at) < julianday('now', '-90 days')"),
     env.DB.prepare("DELETE FROM security_events WHERE julianday(created_at) < julianday('now', '-30 days')"),
     env.DB.prepare("DELETE FROM error_events WHERE julianday(created_at) < julianday('now', '-30 days')"),
     env.DB.prepare("UPDATE operational_alerts SET resolved_at = ? WHERE fingerprint = 'api-error-rate' AND resolved_at IS NULL AND ? <= 0.05").bind(now, rate),
@@ -144,8 +146,17 @@ type NotificationJob = { id: string; type: string; recipient_email: string; titl
 
 async function enqueueWeeklySummaries(env: Env, now: Date) {
   if (now.getUTCDay() !== 0) return;
-  const week = now.toISOString().slice(0, 10); const emails = await env.DB.prepare("SELECT lower(owner_email) AS email FROM workspace_plans WHERE owner_email IS NOT NULL UNION SELECT lower(email) AS email FROM workspace_plan_members").all<{ email: string }>();
-  const statements = emails.results.map(({ email }) => env.DB.prepare("INSERT OR IGNORE INTO notification_jobs (id, type, recipient_email, actor_email, title, body, href, status, attempts, locked_at, available_at, dedupe_key, last_error, created_at, processed_at) VALUES (?, 'weekly_summary', ?, NULL, 'Your weekly Touchline briefing', 'Review new fixture predictions, model performance, and collaborative scouting activity.', '/matches/performance', 'pending', 0, NULL, ?, ?, NULL, ?, NULL)").bind(crypto.randomUUID(), email, now.toISOString(), `weekly:${week}:${email}`, now.toISOString()));
+  const week = now.toISOString().slice(0, 10);
+  const [emails, fixtures] = await Promise.all([
+    env.DB.prepare("SELECT lower(owner_email) AS email FROM workspace_plans WHERE owner_email IS NOT NULL UNION SELECT lower(email) AS email FROM workspace_plan_members").all<{ email: string }>(),
+    env.DB.prepare("SELECT SUM(CASE WHEN status = 'scheduled' THEN 1 ELSE 0 END) AS upcoming, SUM(CASE WHEN status = 'graded' AND julianday(scored_at) >= julianday('now', '-7 days') THEN 1 ELSE 0 END) AS graded FROM fixture_predictions").first<{ upcoming: number; graded: number }>(),
+  ]);
+  const statements: D1PreparedStatement[] = [];
+  for (const { email } of emails.results) {
+    const activity = await env.DB.prepare("SELECT COUNT(DISTINCT p.id) AS plans, COUNT(DISTINCT CASE WHEN julianday(c.created_at) >= julianday('now', '-7 days') THEN c.id END) AS comments FROM workspace_plans p LEFT JOIN workspace_plan_members m ON m.plan_id = p.id LEFT JOIN workspace_plan_comments c ON c.plan_id = p.id WHERE lower(p.owner_email) = lower(?) OR lower(m.email) = lower(?)").bind(email, email).first<{ plans: number; comments: number }>();
+    const body = `${activity?.plans ?? 0} accessible plan(s), ${activity?.comments ?? 0} new comment(s), ${fixtures?.upcoming ?? 0} upcoming prediction(s), and ${fixtures?.graded ?? 0} result(s) graded this week.`;
+    statements.push(env.DB.prepare("INSERT OR IGNORE INTO notification_jobs (id, type, recipient_email, actor_email, title, body, href, status, attempts, locked_at, available_at, dedupe_key, last_error, created_at, processed_at) VALUES (?, 'weekly_summary', ?, NULL, 'Your weekly Touchline briefing', ?, '/matches/performance', 'pending', 0, NULL, ?, ?, NULL, ?, NULL)").bind(crypto.randomUUID(), email, body, now.toISOString(), `weekly:${week}:${email}`, now.toISOString()));
+  }
   for (let index = 0; index < statements.length; index += 75) await env.DB.batch(statements.slice(index, index + 75));
 }
 
