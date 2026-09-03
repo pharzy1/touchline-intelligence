@@ -1,4 +1,4 @@
-import { index, integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const players = sqliteTable("players", {
   id: integer("id").primaryKey(),
@@ -84,4 +84,35 @@ export const syncRuns = sqliteTable("sync_runs", {
 }, (table) => [
   index("idx_sync_runs_completed").on(table.completedAt),
   index("idx_sync_runs_status_completed").on(table.status, table.completedAt),
+]);
+
+export const workspacePlans = sqliteTable("workspace_plans", {
+  id: text("id").primaryKey(),
+  ownerId: text("owner_id").notNull(),
+  kind: text("kind").notNull(),
+  name: text("name").notNull(),
+  description: text("description").notNull().default(""),
+  payloadJson: text("payload_json").notNull(),
+  visibility: text("visibility").notNull().default("private"),
+  publicSlug: text("public_slug"),
+  archived: integer("archived").notNull().default(0),
+  version: integer("version").notNull().default(1),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+}, (table) => [
+  index("idx_workspace_plans_owner_updated").on(table.ownerId, table.updatedAt),
+  index("idx_workspace_plans_owner_archived").on(table.ownerId, table.archived),
+  uniqueIndex("idx_workspace_plans_public_slug").on(table.publicSlug),
+]);
+
+export const workspacePlanVersions = sqliteTable("workspace_plan_versions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  planId: text("plan_id").notNull().references(() => workspacePlans.id, { onDelete: "cascade" }),
+  version: integer("version").notNull(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  payloadJson: text("payload_json").notNull(),
+  createdAt: text("created_at").notNull(),
+}, (table) => [
+  uniqueIndex("idx_workspace_plan_versions_plan_version").on(table.planId, table.version),
 ]);

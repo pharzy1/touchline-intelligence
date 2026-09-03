@@ -1,8 +1,8 @@
 # Touchline Intelligence
 
 [![CI](https://github.com/pharzy1/touchline-intelligence/actions/workflows/ci.yml/badge.svg)](https://github.com/pharzy1/touchline-intelligence/actions/workflows/ci.yml)
-![Integration tests](https://img.shields.io/badge/integration-17%20passing-18a558)
-![E2E flows](https://img.shields.io/badge/Playwright-11%20golden%20paths-2eAD33)
+![Integration tests](https://img.shields.io/badge/integration-18%20passing-18a558)
+![E2E flows](https://img.shields.io/badge/Playwright-12%20golden%20paths-2eAD33)
 
 An end-to-end Premier League analytics platform that turns historical football data into an integrated suite for squad planning, player valuation, similarity scouting, transfer analysis, and calibrated match forecasting.
 
@@ -28,6 +28,7 @@ Most portfolio ML projects stop at a notebook. Touchline carries the work throug
 - **Player intelligence pages** apply the deployed model to four seasons of performance, benchmark estimates against position peers, and keep the latest recorded value explicitly separate from inferred history.
 - **Model registry** publishes challenger metrics, promotion gates, feature and prediction drift, evaluation history, and the rollback contract behind every artifact change.
 - **Live player-data lifecycle** fetches the upstream CC0 tables weekly, fingerprints every input, detects transfers and value/performance changes, blocks malformed snapshots, and proposes reviewed artifact updates through GitHub.
+- **Private workspace** authenticates users with ChatGPT, synchronizes squad and transfer plans to D1, retains immutable versions, supports optimistic recovery, and issues revocable read-only sharing links.
 
 ## Architecture
 
@@ -45,7 +46,7 @@ The deployed app performs inference from compact, immutable JSON artifacts. It d
 
 ## Engineering decisions
 
-Training, calibration, and test data are split **chronologically** for match forecasting so future results cannot leak into earlier predictions. Training emits versioned JSON artifacts with explicit schemas, keeping model training separate from low-latency serving; `pnpm verify:artifacts` rejects malformed or incompatible artifacts before deployment. A weekly lifecycle job fetches and fingerprints the upstream CC0 tables, detects player additions/removals, club transfers, market-value changes, and new performance totals, then retrains ridge and gradient-boosted candidates. Source contracts, identity/domain checks, season monotonicity, history coverage, change-rate limits, holdout/CV quality, artifact compatibility, feature drift, and prediction drift must all pass before a reviewable pull request opens. Edge routes on Cloudflare Workers were chosen over a permanently running server because inference is small, deterministic, and globally cache-adjacent. Every public route uses Zod validation and typed errors, emits structured latency logs, persists anonymous request telemetry to D1 when available, and applies a fail-open per-isolate rate limit. Scheduled fixture syncs persist success/failure telemetry to D1, power a public `/status` freshness dashboard, and retain detailed provider errors only behind a protected diagnostics route. A redundant GitHub Actions scheduler authenticates with a short-lived, claim-verified OIDC token instead of a duplicated production secret. `pnpm check` validates artifacts, creates a production build, and runs the seventeen integration tests before CI can deploy.
+Training, calibration, and test data are split **chronologically** for match forecasting so future results cannot leak into earlier predictions. Training emits versioned JSON artifacts with explicit schemas, keeping model training separate from low-latency serving; `pnpm verify:artifacts` rejects malformed or incompatible artifacts before deployment. A weekly lifecycle job fetches and fingerprints the upstream CC0 tables, detects player additions/removals, club transfers, market-value changes, and new performance totals, then retrains ridge and gradient-boosted candidates. Source contracts, identity/domain checks, season monotonicity, history coverage, change-rate limits, holdout/CV quality, artifact compatibility, feature drift, and prediction drift must all pass before a reviewable pull request opens. Edge routes on Cloudflare Workers were chosen over a permanently running server because inference is small, deterministic, and globally cache-adjacent. Every public route uses Zod validation and typed errors, emits structured latency logs, persists anonymous request telemetry to D1 when available, and applies a fail-open per-isolate rate limit. Scheduled fixture syncs persist success/failure telemetry to D1, power a public `/status` freshness dashboard, and retain detailed provider errors only behind a protected diagnostics route. A redundant GitHub Actions scheduler authenticates with a short-lived, claim-verified OIDC token instead of a duplicated production secret. Account-owned workspace APIs authenticate every request server-side, scope every mutation by stable user ID, reject stale writes through optimistic version checks, and keep sharing private until explicitly enabled. `pnpm check` validates artifacts, creates a production build, and runs the eighteen integration tests before CI can deploy.
 
 ## Model results
 
@@ -138,10 +139,11 @@ docs/       architecture, API, and portfolio material
 - Shareable valuation URLs, explicit match baselines, and D1 request instrumentation
 - Six-hour fixture sync, immutable pre-kickoff predictions, post-match grading, and a public accountability curve
 - Pipeline-time Wikimedia Commons enrichment with local caching, artifact validation, attribution UI, and position-based fallback avatars
-- Zod validation, typed API errors, structured logs, rate limiting, error recovery, and eleven Playwright E2E flows
+- Zod validation, typed API errors, structured logs, rate limiting, error recovery, and twelve Playwright E2E flows
 - Interactive 23-player squad planning across three formations with depth/risk diagnostics, affordability-constrained replacements, before/after analysis, transfer accounting, shareable state, and versioned local plan storage
 - Weekly governed retraining with challenger comparison, feature/prediction drift gates, pull-request promotion, and Git-backed rollback
 - Weekly source ingestion with SHA-256 provenance, schema and change-rate guardrails, transfer/value/performance change ledgers, shared freshness indicators, and reviewed promotion
+- ChatGPT-authenticated D1 workspaces with ownership-scoped APIs, optimistic concurrency, immutable plan history, archive/duplicate/restore operations, and revocable public snapshots
 
 ## Roadmap
 

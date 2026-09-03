@@ -53,6 +53,8 @@ Matches include a 0–100 similarity score and the three closest shared feature 
 
 `GET /api/status` returns safe production telemetry plus the promoted player-data refresh report: source freshness, season, coverage, detected transfer/value/performance changes, and every validation gate. Raw provider failures remain restricted to protected diagnostics.
 
+`GET` and `POST /api/workspace/plans`, plus `GET`, `PATCH`, and `DELETE /api/workspace/plans/:id`, require ChatGPT authentication. Every query is scoped to the authenticated user. Updates include `expectedVersion` and return `409` instead of overwriting a newer edit. New plans are private; owners may explicitly create or revoke a read-only `/shared/:slug` snapshot.
+
 The response also reports the four largest model factors and which side each factor favours.
 
 ## Production status

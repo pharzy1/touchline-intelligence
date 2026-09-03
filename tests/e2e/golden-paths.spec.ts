@@ -32,7 +32,7 @@ test("squad planner models a shareable transfer window", async ({ page }) => {
 test("squad planner saves and reopens a named plan", async ({ page }) => {
   await page.goto("/squad-planner");
   await page.getByLabel("Plan name").fill("Arsenal youth refresh");
-  await page.getByRole("button", { name: "SAVE THIS PLAN" }).click();
+  await page.getByRole("button", { name: "SAVE ON DEVICE" }).click();
   await expect(page.getByText("Saved “Arsenal youth refresh” on this device.")).toBeVisible();
   await page.getByLabel("Formation", { exact: true }).selectOption("3-4-2-1");
   await page.reload();
@@ -40,6 +40,12 @@ test("squad planner saves and reopens a named plan", async ({ page }) => {
   await page.getByRole("button", { name: "OPEN", exact: true }).click();
   await expect(page.getByLabel("Formation", { exact: true })).toHaveValue("4-3-3");
   await expect(page.getByText("Opened “Arsenal youth refresh”.")).toBeVisible();
+});
+
+test("cloud workspace save requires an authenticated account", async ({ page }) => {
+  await page.goto("/squad-planner");
+  await page.getByRole("button", { name: "SAVE TO WORKSPACE" }).click();
+  await expect(page).toHaveURL(/\/signin-with-chatgpt\?return_to=/);
 });
 
 test("comparison workspace loads shareable player evidence", async ({ page }) => {
