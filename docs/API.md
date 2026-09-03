@@ -51,6 +51,8 @@ Matches include a 0–100 similarity score and the three closest shared feature 
 
 `GET /api/matches?home_id=31&away_id=11` returns calibrated home-win, draw, and away-win probabilities. The two identifiers must be valid and different.
 
+`GET /api/status` returns safe production telemetry plus the promoted player-data refresh report: source freshness, season, coverage, detected transfer/value/performance changes, and every validation gate. Raw provider failures remain restricted to protected diagnostics.
+
 The response also reports the four largest model factors and which side each factor favours.
 
 ## Production status

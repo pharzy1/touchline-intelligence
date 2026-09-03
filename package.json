@@ -13,6 +13,7 @@
     "test:e2e": "playwright test",
     "verify:artifacts": "node scripts/verify-artifacts.mjs",
     "model:govern": "python3 pipeline/govern_model.py --candidate-dir data --report data/model-report.json",
+    "data:audit": "python3 pipeline/audit_dataset.py --source-dir work/source-data --candidate-dir data --production-dir data --output work/data-refresh-report.json",
     "check": "pnpm run verify:artifacts && pnpm run build && node --test tests/rendered-html.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate"

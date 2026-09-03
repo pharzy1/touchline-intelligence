@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-FILES = ["valuation-model.json", "scouting-index.json", "player-histories.json"]
+FILES = ["valuation-model.json", "scouting-index.json", "player-histories.json", "data-refresh-report.json"]
 
 def load(directory: Path, name: str): return json.loads((directory / name).read_text())
 

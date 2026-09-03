@@ -2,13 +2,14 @@ import assert from "node:assert/strict";
 import { access, readFile } from "node:fs/promises";
 
 const load = async (name) => JSON.parse(await readFile(new URL(`../data/${name}`, import.meta.url), "utf8"));
-const [valuation, scouting, match, images, histories, report] = await Promise.all([
+const [valuation, scouting, match, images, histories, report, refresh] = await Promise.all([
   load("valuation-model.json"),
   load("scouting-index.json"),
   load("match-model.json"),
   load("player-images.json"),
   load("player-histories.json"),
   load("model-report.json"),
+  load("data-refresh-report.json"),
 ]);
 
 assert.match(valuation.version, /^valuation-/);
@@ -50,5 +51,12 @@ assert.equal(report.productionVersion, valuation.version);
 assert.ok(report.gates.length >= 5 && report.gates.every((gate) => typeof gate.passed === "boolean"));
 assert.ok(report.drift.maximumShift >= 0);
 assert.ok(report.drift.predictionShift >= 0);
+assert.equal(refresh.schemaVersion, 1);
+assert.equal(refresh.status, "validated");
+assert.equal(refresh.modelVersion, scouting.version);
+assert.equal(refresh.season, scouting.season);
+assert.equal(refresh.counts.candidatePlayers, scouting.players.length);
+assert.ok(refresh.counts.clubs >= 18);
+assert.ok(refresh.gates.length >= 5 && refresh.gates.every((gate) => gate.passed === true));
 
 console.log(`Verified ${valuation.version}, ${scouting.version}, ${match.version}, ${histories.version}, and ${Object.keys(images.players).length} licensed player images.`);

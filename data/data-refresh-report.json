@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "status": "validated",
+  "generatedAt": "2026-09-02T20:54:08.712403+00:00",
+  "cadence": "weekly",
+  "nextReviewAfter": "2026-09-07T08:31:00+00:00",
+  "season": 2025,
+  "modelVersion": "scouting-neighbors-valuation-ridge-auto-33681984060",
+  "source": {
+    "name": "dcaribou/transfermarkt-datasets",
+    "license": "CC0-1.0",
+    "latestMatchDate": "2026-05-24",
+    "files": [],
+    "rawRows": {}
+  },
+  "counts": {
+    "previousPlayers": 414,
+    "candidatePlayers": 414,
+    "clubs": 20,
+    "added": 0,
+    "removed": 0,
+    "transfers": 0,
+    "valueChanges": 0,
+    "performanceChanges": 0
+  },
+  "changes": {
+    "transfers": [],
+    "largestValueChanges": []
+  },
+  "gates": [
+    { "name": "Source contracts", "passed": true, "detail": "All compressed source tables exposed the required columns." },
+    { "name": "Record coverage", "passed": true, "detail": "414 eligible players are represented." },
+    { "name": "League coverage", "passed": true, "detail": "20 Premier League clubs are represented." },
+    { "name": "Identity uniqueness", "passed": true, "detail": "Every serving record has a unique player identifier." },
+    { "name": "Domain validity", "passed": true, "detail": "Positions, ages, values, and performance totals passed serving constraints." },
+    { "name": "History coverage", "passed": true, "detail": "Player history artifacts cover the serving population." }
+  ],
+  "releasePolicy": "A validated snapshot opens a pull request. Production changes only after review, merge, CI, and deployment."
+}

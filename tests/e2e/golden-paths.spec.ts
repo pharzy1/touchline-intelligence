@@ -81,6 +81,9 @@ test("production status exposes freshness and artifact versions", async ({ page 
   await expect(page.getByText("Seven-day request volume")).toBeVisible();
   await expect(page.getByText("Database footprint")).toBeVisible();
   await expect(page.getByText("Model versions")).toBeVisible();
+  await expect(page.getByText("Weekly, validated,")).toBeVisible();
+  await expect(page.getByText("PLAYER DATA LIFECYCLE")).toBeVisible();
+  await expect(page.getByText("Source contracts")).toBeVisible();
 });
 
 test("model registry exposes challenger evidence and promotion gates", async ({ page }) => {

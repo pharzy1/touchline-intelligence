@@ -1,3 +1,5 @@
+import refresh from "../data/data-refresh-report.json";
+
 type Page = "home" | "valuation" | "scouting" | "compare" | "transfers" | "squad-planner" | "matches" | "models" | "status";
 
 export function SiteNav({ active }: { active: Page }) {
@@ -11,6 +13,6 @@ export function SiteNav({ active }: { active: Page }) {
       <a className={active === "squad-planner" ? "active" : ""} href="/squad-planner">Planner</a>
       <a className={active === "matches" ? "active" : ""} href="/matches">Matches</a>
     </div>
-    <div className="nav-utility"><a className={active === "models" ? "status-link active" : "status-link"} href="/models">Models</a><a className={active === "status" ? "status-link active" : "status-link"} href="/status"><i /> Status</a><a className="github-link" href="https://github.com/pharzy1/touchline-intelligence">GitHub ↗</a></div>
+    <div className="nav-utility"><a className="data-freshness" href="/status#data-refresh" title={`Validated ${new Date(refresh.generatedAt).toLocaleDateString()}`}><i /> DATA · {refresh.season}</a><a className={active === "models" ? "status-link active" : "status-link"} href="/models">Models</a><a className={active === "status" ? "status-link active" : "status-link"} href="/status"><i /> Status</a><a className="github-link" href="https://github.com/pharzy1/touchline-intelligence">GitHub ↗</a></div>
   </nav>;
 }

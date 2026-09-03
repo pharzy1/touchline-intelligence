@@ -25,6 +25,14 @@ prediction-distribution drift, or loss of the interpretable serving contract.
 Passing candidates are copied into a dedicated pull request; production changes
 only after review and merge, leaving the previous Git revision as the rollback.
 
+`data-refresh-report.json` is the serving-data provenance and change ledger.
+The weekly job records SHA-256 fingerprints and row counts for every compressed
+source table, validates required columns, player identity uniqueness, domain
+bounds, season monotonicity, league/history coverage, and mass-removal limits,
+then records added/removed players, club transfers, value changes, and updated
+performance totals. `/status` exposes the promoted report; failed candidates
+remain CI evidence and never replace the deployed artifacts.
+
 `match-model.json` is produced by `pipeline/train_match_model.py`. Each example
 uses only information available before kickoff: rolling five-match form and
 goal rates plus a sequential Elo rating. Seasons are kept in chronological

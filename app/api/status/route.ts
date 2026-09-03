@@ -1,6 +1,7 @@
 import matchModel from "../../../data/match-model.json";
 import scoutingModel from "../../../data/scouting-index.json";
 import valuationModel from "../../../data/valuation-model.json";
+import dataRefresh from "../../../data/data-refresh-report.json";
 import { rateLimit, recordEvent } from "../shared";
 
 export const runtime = "edge";
@@ -48,8 +49,8 @@ export async function GET(request: Request) {
     const syncAttempts = syncResult?.attempts ?? 0; const syncSuccesses = syncResult?.successes ?? 0;
     const telemetry = { windowHours: 168, requests, errors, errorRate: requests ? errors / requests : 0, medianLatencyMs: percentile(events.map((event) => event.latency_ms), .5), p95LatencyMs: percentile(events.map((event) => event.latency_ms), .95), routes: routeResult.results.map((row) => ({ route: row.route, feature: featureName(row.route), requests: row.requests, errors: row.errors, errorRate: row.requests ? row.errors / row.requests : 0, averageLatencyMs: row.average_latency_ms })), daily: dailyResult.results, records: { apiEvents: recordResult?.api_events ?? 0, predictions: recordResult?.predictions ?? 0, fixturePredictions: recordResult?.fixture_predictions ?? 0, syncRuns: recordResult?.sync_runs ?? 0 }, syncReliability: { attempts: syncAttempts, successes: syncSuccesses, successRate: syncAttempts ? syncSuccesses / syncAttempts : null, averageDurationMs: syncResult?.average_duration_ms ?? null } };
     await recordEvent("/api/status", 200, startedAt);
-    return Response.json({ generatedAt: new Date().toISOString(), ...current, cadenceHours: 6, lastSuccessAt, lastAttemptAt: runs[0]?.completed_at ?? lastSuccessAt, nextExpectedAt: lastSuccessAt ? new Date(new Date(lastSuccessAt).getTime() + 6 * 3_600_000).toISOString() : null, fixtures, runs, telemetry, models: { valuation: valuationModel.version, scouting: scoutingModel.version, matches: matchModel.version }, source: "Fantasy Premier League" });
+    return Response.json({ generatedAt: new Date().toISOString(), ...current, cadenceHours: 6, lastSuccessAt, lastAttemptAt: runs[0]?.completed_at ?? lastSuccessAt, nextExpectedAt: lastSuccessAt ? new Date(new Date(lastSuccessAt).getTime() + 6 * 3_600_000).toISOString() : null, fixtures, runs, telemetry, models: { valuation: valuationModel.version, scouting: scoutingModel.version, matches: matchModel.version }, dataRefresh, source: "Fantasy Premier League" });
   } catch {
-    return Response.json({ generatedAt: new Date().toISOString(), state: "initializing", label: "Awaiting production telemetry", cadenceHours: 6, lastSuccessAt: null, lastAttemptAt: null, nextExpectedAt: null, fixtures: { scheduled: 0, graded: 0, latest_source_update: null }, runs: [], telemetry: emptyTelemetry, models: { valuation: valuationModel.version, scouting: scoutingModel.version, matches: matchModel.version }, source: "Fantasy Premier League" });
+    return Response.json({ generatedAt: new Date().toISOString(), state: "initializing", label: "Awaiting production telemetry", cadenceHours: 6, lastSuccessAt: null, lastAttemptAt: null, nextExpectedAt: null, fixtures: { scheduled: 0, graded: 0, latest_source_update: null }, runs: [], telemetry: emptyTelemetry, models: { valuation: valuationModel.version, scouting: scoutingModel.version, matches: matchModel.version }, dataRefresh, source: "Fantasy Premier League" });
   }
 }

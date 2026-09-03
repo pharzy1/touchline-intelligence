@@ -65,7 +65,7 @@ test("renders public production health and safe status data", async () => {
   const response = await render("/status"); const html = await response.text();
   assert.equal(response.status, 200); assert.match(html, /Trust the system/); assert.match(html, /PRODUCTION OPERATIONS/);
   const api = await requestWorker(new Request("http://localhost/api/status")); const data = await api.json();
-  assert.equal(api.status, 200); assert.ok(["initializing", "operational", "delayed", "degraded", "stale"].includes(data.state)); assert.equal(data.models.matches, "match-softmax-2025-v1"); assert.equal(typeof data.telemetry.requests, "number"); assert.equal(typeof data.telemetry.p95LatencyMs, "number"); assert.ok(Array.isArray(data.telemetry.routes)); assert.equal(data.errorMessage, undefined);
+  assert.equal(api.status, 200); assert.ok(["initializing", "operational", "delayed", "degraded", "stale"].includes(data.state)); assert.equal(data.models.matches, "match-softmax-2025-v1"); assert.equal(data.dataRefresh.status, "validated"); assert.equal(data.dataRefresh.counts.candidatePlayers, 414); assert.ok(data.dataRefresh.gates.every((gate) => gate.passed)); assert.equal(typeof data.telemetry.requests, "number"); assert.equal(typeof data.telemetry.p95LatencyMs, "number"); assert.ok(Array.isArray(data.telemetry.routes)); assert.equal(data.errorMessage, undefined);
 });
 
 test("renders the governed model registry and promotion evidence", async () => {
