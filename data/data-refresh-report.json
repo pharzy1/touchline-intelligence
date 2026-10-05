@@ -1,17 +1,37 @@
 {
   "schemaVersion": 1,
   "status": "validated",
-  "generatedAt": "2026-09-02T20:54:08.712403+00:00",
+  "generatedAt": "2026-10-05T17:17:33.072542+00:00",
   "cadence": "weekly",
-  "nextReviewAfter": "2026-09-07T08:31:00+00:00",
+  "nextReviewAfter": "2026-10-12T17:17:33.072542+00:00",
   "season": 2025,
-  "modelVersion": "scouting-neighbors-valuation-ridge-auto-33681984060",
+  "modelVersion": "scouting-neighbors-valuation-ridge-auto-37347241920",
   "source": {
     "name": "dcaribou/transfermarkt-datasets",
     "license": "CC0-1.0",
     "latestMatchDate": "2026-05-24",
-    "files": [],
-    "rawRows": {}
+    "files": [
+      {
+        "name": "players.csv.gz",
+        "bytes": 4389958,
+        "sha256": "d22e407981d5b51a79bf8ff59835729f3526f7dc3495a6d8ed2f852ed2e86403"
+      },
+      {
+        "name": "games.csv.gz",
+        "bytes": 4995595,
+        "sha256": "142561989017d379bcf9e72bad0b87e0996bae0e7b710ebb3def9255f464c741"
+      },
+      {
+        "name": "appearances.csv.gz",
+        "bytes": 45253638,
+        "sha256": "e096c2b158fc3d52c4550526c4d4850dd62f31007652f4bcae112eadb1646802"
+      }
+    ],
+    "rawRows": {
+      "players.csv.gz": 50149,
+      "games.csv.gz": 88958,
+      "appearances.csv.gz": 1894350
+    }
   },
   "counts": {
     "previousPlayers": 414,
@@ -28,12 +48,46 @@
     "largestValueChanges": []
   },
   "gates": [
-    { "name": "Source contracts", "passed": true, "detail": "All compressed source tables exposed the required columns." },
-    { "name": "Record coverage", "passed": true, "detail": "414 eligible players are represented." },
-    { "name": "League coverage", "passed": true, "detail": "20 Premier League clubs are represented." },
-    { "name": "Identity uniqueness", "passed": true, "detail": "Every serving record has a unique player identifier." },
-    { "name": "Domain validity", "passed": true, "detail": "Positions, ages, values, and performance totals passed serving constraints." },
-    { "name": "History coverage", "passed": true, "detail": "Player history artifacts cover the serving population." }
+    {
+      "name": "Source contracts",
+      "passed": true,
+      "detail": "All compressed source tables opened and exposed the required columns."
+    },
+    {
+      "name": "Record coverage",
+      "passed": true,
+      "detail": "414 eligible players vs 414 in production."
+    },
+    {
+      "name": "League coverage",
+      "passed": true,
+      "detail": "20 Premier League clubs represented."
+    },
+    {
+      "name": "Identity uniqueness",
+      "passed": true,
+      "detail": "Every serving record has a unique player identifier."
+    },
+    {
+      "name": "Domain validity",
+      "passed": true,
+      "detail": "Positions, ages, values, and performance totals stay inside serving constraints."
+    },
+    {
+      "name": "Season monotonicity",
+      "passed": true,
+      "detail": "Candidate season 2025 does not move backward from 2025."
+    },
+    {
+      "name": "History coverage",
+      "passed": true,
+      "detail": "414 of 414 players have validated history artifacts."
+    },
+    {
+      "name": "Change-rate guardrail",
+      "passed": true,
+      "detail": "Unexpected mass removals block the refresh before review."
+    }
   ],
   "releasePolicy": "A validated snapshot opens a pull request. Production changes only after review, merge, CI, and deployment."
 }

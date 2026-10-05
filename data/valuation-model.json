@@ -1,6 +1,6 @@
 {
-  "version": "valuation-ridge-auto-33681984060",
-  "trained_at": "2026-09-03T22:56:54.600919+00:00",
+  "version": "valuation-ridge-auto-37347241920",
+  "trained_at": "2026-10-05T17:17:19.983725+00:00",
   "competition": "GB1",
   "season": 2025,
   "currency": "EUR",
@@ -48,7 +48,7 @@
     0.48402525,
     0.27371001
   ],
-  "intercept": 16.749341455829143,
+  "intercept": 16.749341455829146,
   "coefficients": [
     -0.7567766542,
     -0.1398750925,
@@ -63,7 +63,7 @@
     -0.0064745976,
     -0.0508329225
   ],
-  "uncertainty_ratio": 0.7663414323779077,
+  "uncertainty_ratio": 0.7663414323778952,
   "prediction_interval": {
     "method": "seeded_bootstrap_percentile_80",
     "seed": 2026,
@@ -662,7 +662,7 @@
         0.179810147,
         -0.0050626798,
         0.1802009449,
-        0.0352546733,
+        0.0352546734,
         -0.0062956122,
         -0.0131654997,
         -0.0233181108
@@ -1906,7 +1906,7 @@
         0.01520728,
         23.93368815
       ],
-      "intercept": 15.97753452898596,
+      "intercept": 15.977534528985965,
       "coefficients": [
         -0.8347365273,
         0.374781695,
@@ -1917,7 +1917,7 @@
         -0.0196086651,
         0.1624544353
       ],
-      "uncertainty_ratio": 0.8434524037162356,
+      "uncertainty_ratio": 0.8434524037162298,
       "prediction_interval": {
         "method": "seeded_bootstrap_percentile_80",
         "seed": 2026,
@@ -2873,7 +2873,7 @@
         0.06855588,
         23.29490735
       ],
-      "intercept": 16.672211193133727,
+      "intercept": 16.67221119313373,
       "coefficients": [
         -0.8298829263,
         -0.0256986868,
@@ -2884,7 +2884,7 @@
         0.0076249877,
         0.2237585338
       ],
-      "uncertainty_ratio": 0.7834515173269044,
+      "uncertainty_ratio": 0.7834515173268994,
       "prediction_interval": {
         "method": "seeded_bootstrap_percentile_80",
         "seed": 2026,
@@ -3129,7 +3129,7 @@
             -0.0763255232,
             0.4264065726,
             0.0970642905,
-            0.0704464888,
+            0.0704464887,
             0.1420361345
           ],
           [
@@ -3851,7 +3851,7 @@
         0.0193818797,
         0.0299709059
       ],
-      "uncertainty_ratio": 0.7880115544015456,
+      "uncertainty_ratio": 0.7880115544015455,
       "prediction_interval": {
         "method": "seeded_bootstrap_percentile_80",
         "seed": 2026,
@@ -4807,7 +4807,7 @@
         0.1161586,
         24.76482795
       ],
-      "intercept": 16.96143254947794,
+      "intercept": 16.961432549477944,
       "coefficients": [
         -0.5362718119,
         -0.1290514552,
@@ -4818,7 +4818,7 @@
         0.1557534435,
         0.0855702941
       ],
-      "uncertainty_ratio": 0.5810402170352499,
+      "uncertainty_ratio": 0.5810402170352514,
       "prediction_interval": {
         "method": "seeded_bootstrap_percentile_80",
         "seed": 2026,
